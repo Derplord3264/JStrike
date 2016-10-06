@@ -1,7 +1,7 @@
 {
   "name": "jstrike",
   "version": "0.0.1",
-  "description": "Browser based First Peron Shootier game.",
+  "description": "Browser based First Peron Shooter game.",
   "main": "index.js",
   "scripts": {
     "start": "http-server -p 9000",

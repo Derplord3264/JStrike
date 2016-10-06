@@ -1,19 +1,25 @@
-import InputHandler from './InputHandler';
+import * as constants from '../const';
 
-class OS {
+class System {
 
 	constructor() {
-		/* Create a new InputHandler */
-		this.inputHandler = new InputHandler(this);
 
 		/* Init process stack */
 		this.procStack = new Map();
 		this.procActive = 0;
+
+		window.addEventListener('keypress', e => this.inputHandler(e));
+		window.addEventListener('keydown', e => this.inputHandler(e, true));
 	}
 
-	/* Input interrupt fired by the InputHandler.
+	/* Input interrupt.
 	 */
-	inputInterruptHandler(e) {
+	inputHandler(e, special = false) {
+		if (constants.KEY_SPECIAL.indexOf(e.keyCode) < 0 && special) return;
+
+		e.stopPropagation();
+		e.preventDefault();
+
 		let proc = this.getProcess(this.procActive);
 
 		if (proc) {
@@ -62,4 +68,4 @@ class OS {
 	}
 }
 
-export default OS;
+export let Sys = new System;
