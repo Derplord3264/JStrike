@@ -1,4 +1,4 @@
-import {Sys} from '../core/Sys';
+import {Sys} from './Sys';
 
 class Process {
 

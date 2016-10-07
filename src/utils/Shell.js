@@ -6,10 +6,16 @@ class Shell extends Process {
 	constructor() {
 		super();
 		this.buffer = '';
+		this.pendingCommand = false;
 	}
 
 	start() {
-		this.createDOM();
+		document.body.innerHTML += `
+			<div id="shell">
+				<ul><li id="shell-input">$ <b>&block;</b></li></ul>
+			</div>
+		`;
+		this.exec('motd');
 	}
 
 	input(e) {
@@ -38,44 +44,39 @@ class Shell extends Process {
 	}
 
 	exec(str) {
+		/* Check and set pending command to prevent
+		 * multiple commands to be executed at once.
+		 */
+		if (this.pendingCommand) return;
+
+		/* Shell like formatting */
 		this.out('$ '+ str);
 		if (str == '') return;
+		this.pendingCommand = true;
 
-		switch (str) {
-			case constants.CMD_CLEAR:
-				this.cmd_clear();
-			break;
-			case constants.CMD_HELP:
-				this.cmd_help();
-			break;
-			default:
-				this.out(`${str}: command not found (type 'help')`);
+		/* Special commands */
+		if (str == 'clear') {
+			this.cmd_clear();
+			this.pendingCommand = false;
+			return;
 		}
-	}
 
-	createDOM() {
-		document.body.innerHTML += `
-			<div id="shell">
-				<ul>
-					<li><pre>      _  _____ _        _ _</pre></li>
-					<li><pre>     | |/ ____| |      (_) |</pre></li>
-					<li><pre>     | | (___ | |_ _ __ _| | _____</pre></li>
-					<li><pre> _   | |\\___ \\| __| '__| | |/ / _ \\</pre></li>
-					<li><pre>| |__| |____) | |_| |  | |   <  __/</pre></li>
-					<li><pre> \\____/|_____/ \\__|_|  |_|_|\\_\\___|</pre></li>
-					<li><pre>                              0.0.1</pre></li>
-					<li></li>
-					<li></li>
-					<li>Welcome to JStrike!</li>
-					<li>Please type 'register' if you don't have an account,</li>
-					<li>or 'login' to start playing!</li>
-					<li>For more information type 'help'.</li>
-					<li></li>
-					<li></li>
-					<li id="shell-input">$ <b>&block;</b></li>
-				</ul>
-			</div>
-		`;
+		fetch('http://localhost:9001/shell/', {
+			method: 'POST',
+			body: str
+		}).then(
+			(response) => response.text()
+		).then(
+			(responseText) => {
+				this.out(responseText);
+				this.pendingCommand = false;
+			}
+		).catch(
+			(err) => {
+				this.out(err);
+				this.pendingCommand = false;
+			}
+		);
 	}
 
 	cmd_clear() {
@@ -83,13 +84,6 @@ class Shell extends Process {
 		let input = list.lastElementChild;
 
 		list.innerHTML = input.outerHTML;
-	}
-
-	cmd_help() {
-		this.out('Available commands:');
-		this.out('<pre>	clear	- clear the screen</pre>');
-		this.out('<pre>	help	- display this help</pre>');
-		this.out('');
 	}
 }
 
