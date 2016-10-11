@@ -30,7 +30,16 @@ class System {
 	/* Process interrupt fired by running processes.
 	 */
 	procInterruptHandler(e) {
-		// Handle interrupt
+		switch (e.type) {
+			case 'startProcess':
+				let newProcess = e.data.process;
+
+				this.startProcess(newProcess);
+			break;
+			default:
+				console.warn('Sys::procInterruptHandler Unknown type.');
+				return null;
+		}
 	}
 
 	/* Return a process object specified
@@ -40,7 +49,7 @@ class System {
 
 		/* If process stack is empty, warn and return */
 		if (this.procStack.size == 0) {
-			console.warn('OS::getProcess Process stack empty.');
+			console.warn('Sys::getProcess Process stack empty.');
 			return null;
 		}
 
@@ -49,6 +58,12 @@ class System {
 
 	/* Add a new process object to the process stack */
 	startProcess(processObject) {
+
+		/* Pause running processes */
+		for (let proc of this.procStack.values()) {
+			if (proc.isRunning())
+				proc.pause();
+		}
 
 		/* Get new process ID */
 		let cur_pid = this.procStack.size;

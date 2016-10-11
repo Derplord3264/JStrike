@@ -9,7 +9,7 @@ html, body {
 	height: 100%;
 	font-family: monospace;
 } a, a:visited, a:active {
-	color: #ffffff;
+	color: #ADFF2F;
 } a:hover {
 	text-decoration: none;
 }
@@ -22,7 +22,7 @@ html, body {
 	display: block;
 	position: relative;
 } #shell li {
-	color: #ffffff;
+	color: #ADFF2F;
 } #shell-input b {
 	-webkit-animation: blink 1.5s step-end infinite;
 	-moz-animation: blink 1.5s step-end infinite;
