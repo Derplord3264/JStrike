@@ -1,6 +1,7 @@
 import * as constants from '../const';
+import IO from 'socket.io-client';
 import Process from '../core/Process';
-import Server from './Server';
+//import Server from './Server';
 import JStrike from '../client/JStrike';
 
 class Shell extends Process {
@@ -12,14 +13,12 @@ class Shell extends Process {
 		this.buffer = '';
 		/* Boolean preventing multi-exec commands */
 		this.executing = false;
-		/* Server instance when connected to a server */
-		this.Server = null;
+		/* Socket instance when connected to a server */
+		this.io = null;
 		/* Server namespace used in shell */
 		this.connected_server = '';
 		/* Commands that should be executed over a socket */
-		this.external_cmd = [
-			'show'
-		];
+		this.external_cmd = null;
 	}
 
 	start() {
@@ -100,8 +99,12 @@ class Shell extends Process {
 		/* If executing an external command and
 		 * connected to a server, do a socket cmd.
 		 */
-		if (this.external_cmd.indexOf(argv[0]) >= 0 && this.connected_server) {
-			console.log('external cmd');
+		if (this.io && this.external_cmd.hasOwnProperty(argv[0])) {
+			this.hideInput();
+			this.io.emit('shell', {
+				cmd: argv[0],
+				argv: argv.slice(1)
+			});
 			return;
 		}
 
@@ -110,7 +113,9 @@ class Shell extends Process {
 			case 'clear': 		this.cmd_clear();			break;
 			case 'help': 		this.cmd_help();			break;
 			case 'connect': 	this.cmd_connect(argv[1]);	break;
-			default: 			this.out(`Unknown command: '${argv[0]}'`)
+			default:
+				this.out(`Unknown command: '${argv[0]}'`);
+				this.executing = false;
 		}
 	}
 
@@ -122,45 +127,76 @@ class Shell extends Process {
 	}
 
 	cmd_help() {
-		this.out(`Available commands:
-			<pre>	clear		- clear the screen</pre>
-			<pre>	help		- display this help</pre>
-			<pre>	connect [IP]	- connect to a server</pre>
-			`);
+		let str = `Available commands:
+					<pre>	clear		- clear the screen</pre>
+					<pre>	help		- display this help</pre>`;
+
+		if (this.external_cmd) {
+			for (let cmd in this.external_cmd) {
+				str += `<pre>	${cmd}		- ${this.external_cmd[cmd]}</pre>`;
+			}
+			str += `<pre>	disconnect	- disconnect from the server</pre>`;
+		} else {
+			str += `<pre>	connected	- [IP] connect to a server</pre>`;
+		}
+
+		this.out(str +`\n`);
 		this.executing = false;
 	}
 
 	cmd_connect(server) {
+		if (this.io) {
+			this.out(`connect: already connected`);
+			this.executing = false;
+			return;
+		}
+
 		if (server == '' || server === undefined) {
 			this.out(`connect: IP address required`);
+			this.executing = false;
 			return;
 		}
 
 		this.out(`connecting to ${server}`);
-		this.setup_socket(server);
+		this.setupSocket(server);
 		this.hideInput();
 	}
 
-	setup_socket(server) {
-		this.Server = new Server(server, {
+	setupSocket(server) {
+		this.io = new IO(server, {
 			'sync disconnect on unload': true
 		});
 
-		this.Server.socket.on('connect', data => {
+		this.io.on('connect', () => {
 			this.out(`Connection successful!\n`);
 			this.connected_server = server;
 			this.showInput();
 		});
 
-		this.Server.socket.on('connect_error', data => {
-			this.Server.kill();
-			this.Server = null;
+		this.io.on('connect_error', data => {
+			this.io.disconnect();
+			this.io = null;
 			this.connected_server = '';
+			this.external_cmd = null;
 			this.out(`Failed to connect to ${server}\n`);
 			this.showInput();
 		});
 
-		this.Server.socket.on('')
+		this.io.on('shell', (data) => this.shellHandler(data));
+	}
+
+	shellHandler(data) {
+		switch(data.type) {
+			case 'init':
+				this.external_cmd = data.cmd;
+			break;
+			case 'exec':
+				this.out(data.response);
+				this.showInput();
+			break;
+			default:
+				console.warn('Got unknown response from server: '+ data.type);
+		}
 	}
 }
 
