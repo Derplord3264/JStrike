@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import PointerLockControls from 'three-pointerlock';
-import OBJLoader from 'three-obj-loader';
-import MTLLoader from 'three-mtl-loader';
+import '../lib/DDSLoader';
+import '../lib/MTLLoader';
+import '../lib/OBJLoader';
 
 class Engine {
 
@@ -9,7 +10,8 @@ class Engine {
 		this.config = config;
 
 		/* Engine */
-		this.camera, this.scene, this.renderer, this.controls, this.listener;
+		this.camera, this.scene, this.renderer, this.controls, this.listener,
+		this.reqAnimFrame;
 
 		/* Player */
 		this.player = {
@@ -24,9 +26,11 @@ class Engine {
 			pressedKeys: {}
 		}
 
+		this.objects = [];
+
 		/* Time & sync */
 		this.oldTime = performance.now();
-		this.waitGroup = 2;
+		this.waitGroup = 1;
 
 		/* DOM */
 		this.menu = document.getElementById('menu');
@@ -50,7 +54,7 @@ class Engine {
 				this.controls.enabled = true;
 				this.menu.style.display = 'none';
 			} else {
-				this.player.focus = false;
+				this.controls.enabled = false;
 				this.menu.style.display = 'block';
 			}
 		};
@@ -101,19 +105,19 @@ class Engine {
 		this.scene.add(light);
 
 		/* Resize event listener */
-		window.addEventListener('resize', () => this.onWindowResize, false);
+		window.addEventListener('resize', () => this.onWindowResize(), false);
 	}
 
 	loadAssets() {
 
 		/* Map */
-		THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader());
-		let mtlLoader = new MTLLoader();
+		THREE.Loader.Handlers.add( /\.dds$/i, new THREE.DDSLoader);
+		let mtlLoader = new THREE.MTLLoader;
 		mtlLoader.setPath(`assets/maps/${this.config.map}/`);
 		mtlLoader.load(`${this.config.map}.mtl`, (materials) => {
 			materials.preload();
 
-			let objLoader = new OBJLoader();
+			let objLoader = new THREE.OBJLoader;
 			objLoader.setMaterials(materials);
 			objLoader.setPath(`assets/maps/${this.config.map}/`);
 			objLoader.load(`${this.config.map}.obj`, (object) => {
@@ -122,8 +126,23 @@ class Engine {
 				this.scene.add(object);
 				this.waitGroup--;
 
+			}, (xhr) => {
+				console.log('normal');
+				console.log(xhr);
+			}, (xhr) => {
+				console.log('error');
+				console.log(xhr);
 			});
 		});
+	}
+
+	animate() {
+		this.reqAnimFrame = requestAnimationFrame(() => this.animate());
+
+		/* Skip if resources not loaded */
+		if (this.wg > 0) return;
+
+		this.renderer.render(this.scene, this.camera);
 	}
 }
 

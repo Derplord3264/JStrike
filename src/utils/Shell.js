@@ -34,6 +34,10 @@ class Shell extends Process {
 		document.getElementById('shell').style.display = 'none';
 	}
 
+	continue() {
+		document.getElementById('shell').style.display = 'block';
+	}
+
 	input(e) {
 
 		if (this.executing) return;
@@ -211,6 +215,7 @@ class Shell extends Process {
 				this.showInput();
 			break;
 			case 'join':
+				this.out(`join: starting game '${data.response.name}'`);
 				this.showInput();
 				this.interrupt({
 					type: 'startProcess',

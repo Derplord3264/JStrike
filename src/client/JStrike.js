@@ -9,8 +9,6 @@ class JStrike extends Process {
 
 		this.io = io;
 		this.config = config;
-		console.log('JStrike started');
-		console.log(config);
 	}
 
 	start() {
@@ -28,6 +26,13 @@ class JStrike extends Process {
 		this.initClient();
 	}
 
+	kill() {
+		cancelAnimationFrame(this.engine.reqAnimFrame);
+		this.engine = null;
+		delete this.engine;
+		document.getElementById('jstrike').remove();
+	}
+
 	input(e) {
 		
 	}
@@ -38,6 +43,13 @@ class JStrike extends Process {
 		this.engine.initGraphics();
 		this.engine.loadAssets();
 		this.engine.animate();
+
+		/* Menu exit listener */
+		this.engine.menuExit.addEventListener('click', (e) => {
+			this.interrupt({
+				type: 'killMe'
+			})
+		}, false);
 	}
 }
 

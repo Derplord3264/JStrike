@@ -34,6 +34,9 @@ class System {
 			case 'startProcess':
 				this.startProcess(e.process);
 			break;
+			case 'killMe':
+				this.killMe();
+			break;
 			default:
 				console.warn('Sys::procInterruptHandler Unknown type.');
 				return null;
@@ -78,6 +81,19 @@ class System {
 		this.getProcess(new_pid).start();
 
 		return new_pid;
+	}
+
+	/* Kill current process and unpause previous */
+	killMe() {
+		let cur_pid = this.procStack.size;
+		let proc = this.getProcess(cur_pid);
+		proc.kill();
+		proc = null;
+		this.procStack.delete(cur_pid);
+
+		let next_pid = this.procStack.size;
+		this.procActive = next_pid;
+		this.getProcess(next_pid).continue();
 	}
 }
 
