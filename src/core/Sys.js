@@ -32,9 +32,7 @@ class System {
 	procInterruptHandler(e) {
 		switch (e.type) {
 			case 'startProcess':
-				let newProcess = e.data.process;
-
-				this.startProcess(newProcess);
+				this.startProcess(e.process);
 			break;
 			default:
 				console.warn('Sys::procInterruptHandler Unknown type.');

@@ -39,3 +39,30 @@ html, body {
 } @keyframes blink {
 	67% { opacity: 0 }
 }
+
+#jstrike {
+	overflow: hidden;
+}
+
+#menu {
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	position: absolute;
+} #menu-container {
+	width: 25%;
+	margin: 50px;
+	bottom: 0;
+	position: absolute;
+} #menu-container b {
+	margin-top: 10px;
+	padding: 10px;
+	border: 2px solid #ffffff;
+	color: #ffffff;
+	font-size: 20px;
+	display: block;
+} #menu-container b:hover {
+	color: #000000;
+	background-color: #ffffff;
+	cursor: default;
+}

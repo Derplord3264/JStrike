@@ -4,13 +4,27 @@ import Engine from './Engine';
 
 class JStrike extends Process {
 
-	constructor(game_id) {
+	constructor(io, config) {
 		super();
 
-		this.socket = new Socket(game_id);
+		this.io = io;
+		this.config = config;
+		console.log('JStrike started');
+		console.log(config);
 	}
 
 	start() {
+		document.body.innerHTML += `
+			<div id="jstrike">
+				<div id="loader"></div>
+				<div id="menu">
+					<div id="menu-container">
+						<b id="menu-continue">CONTINUE</b>
+						<b id="menu-setting">SETTINGS</b>
+						<b id="menu-exit">EXIT</b>
+					</div>
+				</div>
+			</div>`;
 		this.initClient();
 	}
 
@@ -19,12 +33,11 @@ class JStrike extends Process {
 	}
 
 	initClient() {
-		let config = this.socket.getConfig();
-
-		if (config.status) {
-			this.engine = new Engine(config);
-			this.engine.loadAssets();
-		}
+		this.engine = new Engine(this.config);
+		this.engine.initPointerLock();
+		this.engine.initGraphics();
+		this.engine.loadAssets();
+		this.engine.animate();
 	}
 }
 

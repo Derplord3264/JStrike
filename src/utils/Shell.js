@@ -112,6 +112,7 @@ class Shell extends Process {
 		switch (argv[0]) {
 			case 'clear': 		this.cmd_clear();			break;
 			case 'help': 		this.cmd_help();			break;
+			case 'disconnect': 	this.cmd_disconnect();		break;
 			case 'connect': 	this.cmd_connect(argv[1]);	break;
 			default:
 				this.out(`Unknown command: '${argv[0]}'`);
@@ -144,6 +145,21 @@ class Shell extends Process {
 		this.executing = false;
 	}
 
+	cmd_disconnect() {
+		if (!this.io) {
+			this.out(`disconnect: not connected`);
+			this.executing = false;
+			return;
+		}
+
+		this.io.disconnect();
+		this.io = null;
+		this.connected_server = '';
+		this.external_cmd = null;
+		this.out(`disconnect: successful\n`);
+		this.executing = false;
+	}
+
 	cmd_connect(server) {
 		if (this.io) {
 			this.out(`connect: already connected`);
@@ -168,7 +184,7 @@ class Shell extends Process {
 		});
 
 		this.io.on('connect', () => {
-			this.out(`Connection successful!\n`);
+			this.out(`connection successful!\n`);
 			this.connected_server = server;
 			this.showInput();
 		});
@@ -178,7 +194,7 @@ class Shell extends Process {
 			this.io = null;
 			this.connected_server = '';
 			this.external_cmd = null;
-			this.out(`Failed to connect to ${server}\n`);
+			this.out(`failed to connect to ${server}\n`);
 			this.showInput();
 		});
 
@@ -191,8 +207,15 @@ class Shell extends Process {
 				this.external_cmd = data.cmd;
 			break;
 			case 'exec':
-				this.out(data.response);
+				this.out(data.response +'\n');
 				this.showInput();
+			break;
+			case 'join':
+				this.showInput();
+				this.interrupt({
+					type: 'startProcess',
+					process: new JStrike(this.io, data.response)
+				});
 			break;
 			default:
 				console.warn('Got unknown response from server: '+ data.type);
