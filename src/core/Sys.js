@@ -8,17 +8,18 @@ class System {
 		this.procStack = new Map();
 		this.procActive = 0;
 
-		window.addEventListener('keypress', e => this.inputHandler(e));
-		window.addEventListener('keydown', e => this.inputHandler(e, true));
+		window.addEventListener('keypress', 	(e) => this.inputHandler(e));
+		window.addEventListener('keydown', 		(e) => this.inputHandler(e));
+		window.addEventListener('keyup', 		(e) => this.inputHandler(e));
+		window.addEventListener('mousedown', 	(e) => this.inputHandler(e));
+		window.addEventListener('mouseup', 		(e) => this.inputHandler(e));
 	}
 
 	/* Input interrupt.
 	 */
-	inputHandler(e, special = false) {
-		if (constants.KEY_SPECIAL.indexOf(e.keyCode) < 0 && special) return;
-
+	inputHandler(e) {
 		e.stopPropagation();
-		e.preventDefault();
+		//e.preventDefault();
 
 		let proc = this.getProcess(this.procActive);
 

@@ -40,7 +40,14 @@ class Shell extends Process {
 
 	input(e) {
 
-		if (this.executing) return;
+		/* For keydown event, only listen for the backspace key.
+		 * Listen for keypress events since we want to capture
+		  * the key-character. Ignore every keyup event.
+		 */
+		if ((e.type == 'keydown' && e.keyCode != constants.KEY_BACKSPACE)
+			|| e.type == 'keyup'
+			|| this.executing)
+			return; 
 
 		switch (e.keyCode) {
 			case constants.KEY_ENTER:
@@ -142,7 +149,7 @@ class Shell extends Process {
 			}
 			str += `<pre>	disconnect	- disconnect from the server</pre>`;
 		} else {
-			str += `<pre>	connected	- [IP] connect to a server</pre>`;
+			str += `<pre>	connect		- [IP] connect to a server</pre>`;
 		}
 
 		this.out(str +`\n`);

@@ -34,7 +34,26 @@ class JStrike extends Process {
 	}
 
 	input(e) {
-		
+		/* 1 = down, 0 = up */
+		let direction = (e.type == 'keydown' || e.type == 'keypress') ? 1 : 0;
+
+		switch (e.keyCode) {
+			case constants.KEY_W:
+				this.engine.input(constants.KEY_W, direction);
+			break;
+			case constants.KEY_A:
+				this.engine.input(constants.KEY_A, direction);
+			break;
+			case constants.KEY_S:
+				this.engine.input(constants.KEY_S, direction);
+			break;
+			case constants.KEY_D:
+				this.engine.input(constants.KEY_D, direction);
+			break;
+			case constants.KEY_SPACE:
+				this.engine.input(constants.KEY_SPACE, direction);
+			break;
+		}
 	}
 
 	initClient() {
