@@ -36,7 +36,9 @@ class JStrike extends Process {
 	input(e) {
 		/* 1 = down, 0 = up */
 		let direction = (e.type == 'keydown' || e.type == 'keypress') ? 1 : 0;
+		let validKey = true;
 
+		/* Filter keys and send allowed ones to the engine */
 		switch (e.keyCode) {
 			case constants.KEY_W:
 				this.engine.input(constants.KEY_W, direction);
@@ -53,11 +55,13 @@ class JStrike extends Process {
 			case constants.KEY_SPACE:
 				this.engine.input(constants.KEY_SPACE, direction);
 			break;
+			default:
+				validKey = false;
 		}
 	}
 
 	initClient() {
-		this.engine = new Engine(this.config);
+		this.engine = new Engine(this.io, this.config);
 		this.engine.initPointerLock();
 		this.engine.initGraphics();
 		this.engine.loadAssets();
@@ -65,6 +69,7 @@ class JStrike extends Process {
 
 		/* Menu exit listener */
 		this.engine.menuExit.addEventListener('click', (e) => {
+			this.io.emit('disconnecting');
 			this.interrupt({
 				type: 'killMe'
 			})

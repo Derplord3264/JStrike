@@ -3,7 +3,9 @@ import {Sys} from './Sys';
 class Process {
 
 	constructor() {
-		/* Process status, 1 = running 0 = paused
+		/* Process status.
+		 * 1 = running
+		 * 0 = paused
 		 */
 		this.procRunning = 1;
 	}

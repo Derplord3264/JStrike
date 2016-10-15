@@ -1,4 +1,5 @@
 import * as constants from '../const';
+import SocketHandler from './SocketHandler';
 import * as THREE from 'three';
 import PointerLockControls from 'three-pointerlock';
 import '../lib/DDSLoader';
@@ -7,7 +8,8 @@ import '../lib/OBJLoader';
 
 class Engine {
 
-	constructor(config) {
+	constructor(io, config) {
+		this.socketHandler = new SocketHandler(io, this);
 		this.config = config;
 
 		/* Engine */
@@ -34,9 +36,11 @@ class Engine {
 			speed: 25,
 			retardation: 10,
 			jumpVelocity: 300,
+			nullVelocity: 0.1
 		}
 
 		this.objects = [];
+		this.enemies = [];
 
 		/* Time & sync */
 		this.oldTime = performance.now();
@@ -207,15 +211,19 @@ class Engine {
 		let delta = (time - this.oldTime) / 1000;
 		this.oldTime = time;
 
-		this.anim_updateVelocity(delta);
+		/* Do animations (order dependant) */
+		this.anim_velocity(delta);
 		this.anim_retardation(delta);
-		this.anim_detectCollision();
+		this.anim_collision();
 		this.anim_translation(delta);
 
+		this.socketHandler.tick();
+
+		/* Render frame */
 		this.renderer.render(this.scene, this.camera);
 	}
 
-	anim_updateVelocity(delta) {
+	anim_velocity(delta) {
 		if (!this.player.focus) return;
 
 		/* Jump */
@@ -245,7 +253,7 @@ class Engine {
 		this.controls.getObject().translateZ(this.player.velocity.z * delta);
 	}
 
-	anim_detectCollision() {
+	anim_collision() {
 		let rayHits, actualDist;
 		let raycaster = new THREE.Raycaster;
 		raycaster.ray.origin.copy(this.controls.getObject().position);
@@ -265,7 +273,7 @@ class Engine {
 
 			/* Dropping down */
 			} else if ((this.player.velocity.y == 0) && (actualDist > this.player.height )) {
-				if (rayHits[0].face.normal.y != 1) {
+				if (rayHits[0].face.normal.y != 1 && actualDist < this.player.height + 5) {
 					this.controls.getObject().position.y -= actualDist - this.player.height;
 				} else {
 					this.player.airborne = true;
@@ -274,7 +282,7 @@ class Engine {
 		}
 
 		/* If not moving, don't cast rays */
-		if (this.player.velocity.length() < 0.1) return;
+		if (this.player.velocity.length() < this.settings.nullVelocity) return;
 
 		let buglet;
 
@@ -284,7 +292,6 @@ class Engine {
 				actualDist = Math.abs(rayHits[0].distance);
 
 				this.buglets[buglet].position.copy(rayHits[0].point);
-				console.log(rayHits[0]);
 
 				if(actualDist < this.player.rayspace) {
 					if (axis > 0) {
@@ -310,8 +317,34 @@ class Engine {
 		/* Back */
 		buglet = 3;
 		raycaster.ray.direction.set(0, 0, 1);	checkRay(0, -1);
+	}
 
-		console.log = function(){}
+	onJoin(data) {
+		this.enemies[data.id] = new THREE.Mesh(
+			new THREE.SphereGeometry(20, 5, 5),
+			new THREE.MeshBasicMaterial({color: 0x00ff00})
+		);
+		this.enemies[data.id].position.set(
+			data.pos.x,
+			data.pos.y,
+			data.pos.z,
+		);
+		this.enemies[data.id].name = data.id;
+		this.scene.add(this.enemies[data.id]);
+	}
+
+	onDisconnecting(client_id) {
+		let name = this.scene.getObjectByName(client_id);
+		this.scene.remove(name);
+		this.enemies[client_id] = null;
+	}
+
+	onMove(data) {
+		this.enemies[data.id].position.set(
+			data.pos.x,
+			data.pos.y,
+			data.pos.z,
+		);
 	}
 }
 

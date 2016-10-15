@@ -8,6 +8,7 @@ class System {
 		this.procStack = new Map();
 		this.procActive = 0;
 
+		/* Add input even listeners */
 		window.addEventListener('keypress', 	(e) => this.inputHandler(e));
 		window.addEventListener('keydown', 		(e) => this.inputHandler(e));
 		window.addEventListener('keyup', 		(e) => this.inputHandler(e));
@@ -16,6 +17,8 @@ class System {
 	}
 
 	/* Input interrupt.
+	 * Stop browser propagation and send the input,
+	 * unfiltered, to the active process.
 	 */
 	inputHandler(e) {
 		e.stopPropagation();
@@ -58,7 +61,9 @@ class System {
 		return this.procStack.get(pid);
 	}
 
-	/* Add a new process object to the process stack */
+	/* Add a new process object to the process stack,
+	 * start it and make it the active process.
+	 */
 	startProcess(processObject) {
 
 		/* Pause running processes */
@@ -84,7 +89,7 @@ class System {
 		return new_pid;
 	}
 
-	/* Kill current process and unpause previous */
+	/* Kill current process and continue previous */
 	killMe() {
 		let cur_pid = this.procStack.size;
 		let proc = this.getProcess(cur_pid);

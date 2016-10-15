@@ -1,7 +1,6 @@
 import * as constants from '../const';
 import IO from 'socket.io-client';
 import Process from '../core/Process';
-//import Server from './Server';
 import JStrike from '../client/JStrike';
 
 class Shell extends Process {
@@ -31,10 +30,12 @@ class Shell extends Process {
 	}
 
 	pause() {
+		super.procRunning = 0;
 		document.getElementById('shell').style.display = 'none';
 	}
 
 	continue() {
+		super.procRunning = 1;
 		document.getElementById('shell').style.display = 'block';
 	}
 
@@ -42,10 +43,12 @@ class Shell extends Process {
 
 		/* For keydown event, only listen for the backspace key.
 		 * Listen for keypress events since we want to capture
-		  * the key-character. Ignore every keyup event.
+		 * the key-character. Ignore every other event.
 		 */
 		if ((e.type == 'keydown' && e.keyCode != constants.KEY_BACKSPACE)
 			|| e.type == 'keyup'
+			|| e.type == 'mousedown'
+			|| e.type == 'mouseup'
 			|| this.executing)
 			return; 
 
@@ -62,15 +65,21 @@ class Shell extends Process {
 		}
 
 		let str = `${this.connected_server}$ ${this.buffer}<b>&block;</b>`;
-		
 		document.getElementById('shell-input').innerHTML = str;
 	}
 
+	/* Hide input field.
+	 * Used when waiting for an external
+	 * cmd to get a response.
+	 */
 	hideInput() {
 		this.executing = true;
 		document.getElementById('shell-input').style.display = 'none';
 	}
 
+	/* Show input field.
+	 * Add server IP as identity.
+	 */
 	showInput() {
 		this.executing = false;
 
@@ -79,6 +88,9 @@ class Shell extends Process {
 		document.getElementById('shell-input').style.display = 'block';
 	}
 
+	/* Print every line in `str` to the terminal.
+	 * If `id` is set, include server IP identity.
+	 */
 	out(str, id = null) {
 		let list = document.getElementById('shell').lastElementChild;
 		let lines = str.split('\n');
@@ -90,9 +102,15 @@ class Shell extends Process {
 			list.insertBefore(element, list.lastElementChild);
 		}
 
+		/* Scroll to bottom */
 		window.scrollTo(0, document.body.scrollHeight);
 	}
 
+	/* Execute a command.
+	 * Check if command is in external-cmd list, if it is
+	 * emit the command over the socket.
+	 * If regular command, call appropriate function.
+	 */
 	exec(str) {
 		this.buffer = '';
 
@@ -131,6 +149,7 @@ class Shell extends Process {
 		}
 	}
 
+	/* Clear the terminal */
 	cmd_clear() {
 		let list = document.getElementById('shell').lastElementChild;
 		let input = list.lastElementChild;
