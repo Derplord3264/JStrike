@@ -4,11 +4,11 @@ import Engine from './Engine';
 
 class JStrike extends Process {
 
-	constructor(io, config) {
+	constructor(io, response) {
 		super();
 
 		this.io = io;
-		this.config = config;
+		this.config = response.config;
 	}
 
 	start() {

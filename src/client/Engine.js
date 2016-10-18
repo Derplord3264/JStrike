@@ -44,9 +44,10 @@ class Engine {
 
 		/* Time & sync */
 		this.oldTime = performance.now();
-		this.waitGroup = 1;
+		this.waitGroup = 2;
 
 		/* DOM */
+		this.loader = document.getElementById('loader');
 		this.menu = document.getElementById('menu');
 		this.menuContinue = document.getElementById('menu-continue');
 		this.menuSettings = document.getElementById('menu-settings');
@@ -136,7 +137,7 @@ class Engine {
 		}
 
 		/* Resize event listener */
-		window.addEventListener('resize', () => this.onWindowResize, false);
+		window.addEventListener('resize', () => this.onWindowResize(), false);
 	}
 
 	loadAssets() {
@@ -158,11 +159,9 @@ class Engine {
 				this.waitGroup--;
 
 			}, (xhr) => {
-				console.log('normal');
-				console.log(xhr);
+				this.loadAssetsHelper(0, 'Map', xhr);
 			}, (xhr) => {
-				console.log('error');
-				console.log(xhr);
+				this.loadAssetsHelper(0, 'Map', -1);
 			});
 		});
 
@@ -198,13 +197,53 @@ class Engine {
 			//this.renderDepth = 1000.0;
 			this.scene.add(skyBox);
 		});
+
+		/* Gun */
+		let objectLoader = new THREE.ObjectLoader;
+		objectLoader.load('assets/weapons/ak-47-kalashnikov/ak-47-kalashnikov.json', (obj) => {
+			/*self.gun = obj;
+			self.gun.traverse(function(child) {
+				if (child instanceof THREE.Mesh && child.material.map == null)
+					child.material.color.setRGB(0, 0, 0);
+			});
+			//self.gun.lookAt(self.gunTarget);
+			self.gun.rotation.y = Math.PI;
+			self.controls.getObject().add(self.gun);*/
+			this.waitGroup--;
+		}, (xhr) => {
+			this.loadAssetsHelper(1, 'Gun', xhr);
+		}, (xhr) => {
+			this.loadAssetsHelper(1, 'Gun', -1);
+		});
+	}
+
+	loadAssetsHelper(id, str, xhr) {
+		let display = '';
+
+		if (xhr < 0) {
+			display = `Error loading ${str}`;
+		} else {
+			if (xhr.lengthComputable) {
+				let pc = xhr.loaded / xhr.total * 100;
+				pc = Math.round(pc, 2);
+				display = `Loading ${str} (${pc}%)`;
+			}
+		}
+		let element = document.getElementById(`asset-${id}`);
+
+		if (element == null) {
+			this.loader.innerHTML += `<div id="asset-${id}">${display}</div>`;
+		} else {
+			element.innerHTML = display;
+		}
 	}
 
 	animate() {
 		this.reqAnimFrame = requestAnimationFrame(() => this.animate());
 
 		/* Skip if resources not loaded */
-		if (this.wg > 0) return;
+		if (this.waitGroup > 0) return;
+		this.loader.style.display = 'none';
 
 		/* Calculate delta-time */
 		let time = performance.now();

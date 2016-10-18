@@ -241,7 +241,7 @@ class Shell extends Process {
 				this.showInput();
 			break;
 			case 'join':
-				this.out(`join: starting game '${data.response.name}'`);
+				this.out(`join: starting game '${data.response.config.name}'`);
 				this.showInput();
 				this.interrupt({
 					type: 'startProcess',
