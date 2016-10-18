@@ -340,6 +340,9 @@ class Engine {
 	}
 
 	onMove(data) {
+		if (!this.enemies.hasOwnProperty(data.id))
+			this.onJoin(data);
+
 		this.enemies[data.id].position.set(
 			data.pos.x,
 			data.pos.y,
