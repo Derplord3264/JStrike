@@ -1,6 +1,6 @@
 import * as constants from '../const';
-import IO from 'socket.io-client';
 import Process from '../core/Process';
+import IO from 'socket.io-client';
 import JStrike from '../client/JStrike';
 
 class Shell extends Process {
@@ -21,7 +21,6 @@ class Shell extends Process {
 	}
 
 	start() {
-		/* Create HTML and issue the help command */
 		document.body.innerHTML += `
 			<div id="shell">
 				<ul><li id="shell-input">$ <b>&block;</b></li></ul>
@@ -30,12 +29,12 @@ class Shell extends Process {
 	}
 
 	pause() {
-		super.procRunning = 0;
+		super.pause();
 		document.getElementById('shell').style.display = 'none';
 	}
 
 	continue() {
-		super.procRunning = 1;
+		super.continue();
 		document.getElementById('shell').style.display = 'block';
 	}
 
@@ -60,12 +59,10 @@ class Shell extends Process {
 				this.buffer = this.buffer.slice(0, -1);
 			break;
 			default:
-				let char = String.fromCharCode(e.charCode || e.keyCode);
-				this.buffer += char;
+				this.buffer += String.fromCharCode(e.charCode || e.keyCode);
 		}
 
-		let str = `${this.connected_server}$ ${this.buffer}<b>&block;</b>`;
-		document.getElementById('shell-input').innerHTML = str;
+		document.getElementById('shell-input').innerHTML = `${this.connected_server}$ ${this.buffer}<b>&block;</b>`;
 	}
 
 	/* Hide input field.
@@ -82,23 +79,20 @@ class Shell extends Process {
 	 */
 	showInput() {
 		this.executing = false;
-
-		let str = `${this.connected_server}$<b>&block;</b>`;
-		document.getElementById('shell-input').innerHTML = str;
+		document.getElementById('shell-input').innerHTML = `${this.connected_server}$<b>&block;</b>`;
 		document.getElementById('shell-input').style.display = 'block';
 	}
 
 	/* Print every line in `str` to the terminal.
 	 * If `id` is set, include server IP identity.
 	 */
-	out(str, id = null) {
+	out(str, id = false) {
 		let list = document.getElementById('shell').lastElementChild;
 		let lines = str.split('\n');
 
 		for (let line of lines) {
 			let element = document.createElement('li');
 			element.innerHTML = id ? `${this.connected_server}$ ${line}` : line;
-
 			list.insertBefore(element, list.lastElementChild);
 		}
 
@@ -162,6 +156,7 @@ class Shell extends Process {
 					<pre>	clear		- clear the screen</pre>
 					<pre>	help		- display this help</pre>`;
 
+		/* Display commands provided by external server */
 		if (this.external_cmd) {
 			for (let cmd in this.external_cmd) {
 				str += `<pre>	${cmd}		- ${this.external_cmd[cmd]}</pre>`;
@@ -170,7 +165,6 @@ class Shell extends Process {
 		} else {
 			str += `<pre>	connect		- [IP] connect to a server</pre>`;
 		}
-
 		this.out(str +`\n`);
 		this.executing = false;
 	}
@@ -181,7 +175,6 @@ class Shell extends Process {
 			this.executing = false;
 			return;
 		}
-
 		this.io.disconnect();
 		this.io = null;
 		this.connected_server = '';

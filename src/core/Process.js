@@ -3,19 +3,23 @@ import {Sys} from './Sys';
 class Process {
 
 	constructor() {
-		/* Process status.
-		 * 1 = running
-		 * 0 = paused
-		 */
-		this.procRunning = 1;
+		this.running = true;
 	}
 
-	interrupt(e) {
-		Sys.procInterruptHandler(e);
+	pause() {
+		this.running = false;
+	}
+
+	continue() {
+		this.running = true;
 	}
 
 	isRunning() {
-		return this.procRunning;
+		return this.running;
+	}
+
+	interrupt(e) {
+		Sys.interruptHandler(e);
 	}
 }
 

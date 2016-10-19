@@ -201,14 +201,14 @@ class Engine {
 		/* Gun */
 		let objectLoader = new THREE.ObjectLoader;
 		objectLoader.load('assets/weapons/ak-47-kalashnikov/ak-47-kalashnikov.json', (obj) => {
-			/*self.gun = obj;
-			self.gun.traverse(function(child) {
+			this.gun = obj;
+			this.gun.traverse(function(child) {
 				if (child instanceof THREE.Mesh && child.material.map == null)
 					child.material.color.setRGB(0, 0, 0);
 			});
 			//self.gun.lookAt(self.gunTarget);
-			self.gun.rotation.y = Math.PI;
-			self.controls.getObject().add(self.gun);*/
+			this.gun.rotation.y = Math.PI;
+			this.controls.getObject().add(this.gun);
 			this.waitGroup--;
 		}, (xhr) => {
 			this.loadAssetsHelper(1, 'Gun', xhr);

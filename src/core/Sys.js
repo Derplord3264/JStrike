@@ -1,12 +1,11 @@
 import * as constants from '../const';
+import ProcessStack from './ProcessStack';
 
 class System {
 
 	constructor() {
-
 		/* Init process stack */
-		this.procStack = new Map();
-		this.procActive = 0;
+		this.stack = new ProcessStack();
 
 		/* Add input even listeners */
 		window.addEventListener('keypress', 	(e) => this.inputHandler(e));
@@ -22,18 +21,16 @@ class System {
 	 */
 	inputHandler(e) {
 		e.stopPropagation();
-		//e.preventDefault();
 
-		let proc = this.getProcess(this.procActive);
-
-		if (proc) {
-			proc.input(e);
+		let current = this.stack.getTopItem();
+		if (current !== 'undefined') {
+			current.input(e);
 		}
 	}
 
 	/* Process interrupt fired by running processes.
 	 */
-	procInterruptHandler(e) {
+	interruptHandler(e) {
 		switch (e.type) {
 			case 'startProcess':
 				this.startProcess(e.process);
@@ -47,59 +44,25 @@ class System {
 		}
 	}
 
-	/* Return a process object specified
-	 * by its process ID.
+	/* Push a new process object to the process stack.
+	 * Start it.
 	 */
-	getProcess(pid) {
-
-		/* If process stack is empty, warn and return */
-		if (this.procStack.size == 0) {
-			console.warn('Sys::getProcess Process stack empty.');
-			return null;
-		}
-
-		return this.procStack.get(pid);
-	}
-
-	/* Add a new process object to the process stack,
-	 * start it and make it the active process.
-	 */
-	startProcess(processObject) {
-
+	startProcess(proc) {
 		/* Pause running processes */
-		for (let proc of this.procStack.values()) {
-			if (proc.isRunning())
-				proc.pause();
-		}
+		this.stack.pauseAll();
+		/* Push new process */
+		let pid = this.stack.push(proc);
+		/* Start new process */
+		this.stack.getItem(pid).start();
 
-		/* Get new process ID */
-		let cur_pid = this.procStack.size;
-		let new_pid = cur_pid + 1;
-
-		/* Add process object to process stack */
-		this.procStack.set(
-			new_pid,
-			processObject
-		);
-
-		/* Start the process */
-		this.procActive = new_pid;
-		this.getProcess(new_pid).start();
-
-		return new_pid;
+		return pid;
 	}
 
 	/* Kill current process and continue previous */
 	killMe() {
-		let cur_pid = this.procStack.size;
-		let proc = this.getProcess(cur_pid);
-		proc.kill();
-		proc = null;
-		this.procStack.delete(cur_pid);
-
-		let next_pid = this.procStack.size;
-		this.procActive = next_pid;
-		this.getProcess(next_pid).continue();
+		this.stack.getTopItem().kill();
+		this.stack.pop();
+		this.stack.getTopItem().continue();
 	}
 }
 
