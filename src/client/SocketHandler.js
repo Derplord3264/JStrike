@@ -1,13 +1,20 @@
 
 class SocketHandler {
 
-	constructor(io, engine) {
+	constructor(io) {
 		this.io = io;
+	}
+
+	init(engine) {
 		this.engine = engine;
 
 		this.io.on('join', (data) => this.engine.onJoin(data));
 		this.io.on('disconnecting', (client_id) => this.engine.onDisconnecting(client_id));
 		this.io.on('move', (data) => this.engine.onMove(data));
+	}
+
+	disconnecting() {
+		this.io.emit('disconnecting');
 	}
 
 	tick() {

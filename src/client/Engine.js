@@ -1,5 +1,5 @@
 import * as constants from '../const';
-import SocketHandler from './SocketHandler';
+import Player from './Player';
 import * as THREE from 'three';
 import PointerLockControls from 'three-pointerlock';
 import '../lib/DDSLoader';
@@ -8,34 +8,19 @@ import '../lib/OBJLoader';
 
 class Engine {
 
-	constructor(io, config) {
-		this.socketHandler = new SocketHandler(io, this);
+	constructor(config) {
 		this.config = config;
 
 		/* Engine */
-		this.camera, this.scene, this.renderer, this.controls, this.listener,
-		this.reqAnimFrame;
+		this.camera, this.scene, this.renderer,
+		this.controls, this.listener, this.reqAnimFrame;
 
 		/* Player */
-		this.player = {
-			velocity: new THREE.Vector3,
-			height: 55,
-			wheight: 80,
-			airborne: false,
-			aiming: false,
-			moving: false,
-			shooting: false,
-			rayspace: 20,
-			focus: false,
-			keys: {}
-		}
+		this.player = new Player;
 
 		/* Settings */
 		this.settings = {
 			fov: 80,
-			speed: 25,
-			retardation: 10,
-			jumpVelocity: 300,
 			nullVelocity: 0.1
 		}
 
@@ -55,13 +40,16 @@ class Engine {
 	}
 
 	input(key, direction) {
-		this.player.keys[key] = direction;
+		this.player.setKey(key, direction);
 	}
 
-	onWindowResize() {
-		this.camera.aspect = window.innerWidth / window.innerHeight;
-		this.camera.updateProjectionMatrix();
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
+	kill() {
+		cancelAnimationFrame(this.reqAnimFrame);
+	}
+
+	initSocketHandler(socketHandler) {
+		this.socketHandler = socketHandler;
+		this.socketHandler.init(this);
 	}
 
 	initPointerLock() {
@@ -69,16 +57,15 @@ class Engine {
 
 		let pointerLockChange = (e) => {
 			if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
-				this.player.focus = true;
+				this.player.setFocus(true);
 				this.controls.enabled = true;
 				this.menu.style.display = 'none';
 			} else {
-				this.player.focus = false;
+				this.player.setFocus(false);
 				this.controls.enabled = false;
 				this.menu.style.display = 'block';
 			}
 		};
-
 		let pointerLockError = function(e) {
 			console.warn('Engine::pointerLockError');
 		};
@@ -93,7 +80,6 @@ class Engine {
 
 		this.menuContinue.addEventListener('click', (e) => {
 			this.menu.style.display = 'none';
-
 			/* Ask browser to lock the pointer */
 			element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
 			element.requestPointerLock();
@@ -101,7 +87,6 @@ class Engine {
 	}
 
 	initGraphics() {
-
 		/* Renderer */
 		this.renderer = new THREE.WebGLRenderer;
 		this.renderer.setClearColor(0x2f588e);
@@ -119,25 +104,18 @@ class Engine {
 		this.controls = new PointerLockControls(this.camera);
 		this.controls.getObject().position.set(this.config.pos.x, this.config.pos.y, this.config.pos.z);
 		this.scene.add(this.controls.getObject());
+		this.player.setControls(this.controls.getObject());
 
 		/* Light */
 		let light = new THREE.HemisphereLight(0xffffff, 0xe6c5a2, 0.75);
 		this.scene.add(light);
 
-		/* Inint debuglets */
-		this.buglets = {};
-		let i = 0;
-		while (i < 4) {
-			this.buglets[i] = new THREE.Mesh(
-				new THREE.SphereGeometry(1.5, 5, 5),
-				new THREE.MeshBasicMaterial({color: 0xff0000})
-			);
-			this.scene.add(this.buglets[i]);
-			i++;
-		}
-
 		/* Resize event listener */
-		window.addEventListener('resize', () => this.onWindowResize(), false);
+		window.addEventListener('resize', () => {
+			this.camera.aspect = window.innerWidth / window.innerHeight;
+			this.camera.updateProjectionMatrix();
+			this.renderer.setSize(window.innerWidth, window.innerHeight);
+		}, false);
 	}
 
 	loadAssets() {
@@ -207,8 +185,10 @@ class Engine {
 					child.material.color.setRGB(0, 0, 0);
 			});
 			//self.gun.lookAt(self.gunTarget);
+			//this.gun.position.set(10, -10, 0);
 			this.gun.rotation.y = Math.PI;
-			this.controls.getObject().add(this.gun);
+			//this.controls.getObject().add(this.gun);
+			this.scene.add(this.gun);
 			this.waitGroup--;
 		}, (xhr) => {
 			this.loadAssetsHelper(1, 'Gun', xhr);
@@ -238,6 +218,13 @@ class Engine {
 		}
 	}
 
+	getDelta() {
+		let time = performance.now();
+		let delta = (time - this.oldTime) / 1000;
+		this.oldTime = time;
+		return delta;
+	}
+
 	animate() {
 		this.reqAnimFrame = requestAnimationFrame(() => this.animate());
 
@@ -246,15 +233,27 @@ class Engine {
 		this.loader.style.display = 'none';
 
 		/* Calculate delta-time */
-		let time = performance.now();
-		let delta = (time - this.oldTime) / 1000;
-		this.oldTime = time;
+		let delta = this.getDelta();
+		/* Animate player */
+		this.animatePlayer(delta);
 
-		/* Do animations (order dependant) */
-		this.anim_velocity(delta);
-		this.anim_retardation(delta);
-		this.anim_collision();
-		this.anim_translation(delta);
+		/////////////////////////////
+		this.gun.position.set(
+			this.controls.getObject().position.x - Math.sin(this.controls.getObject().rotation.y + Math.PI / 2) * 5,
+			this.controls.getObject().position.y + 2.5,
+			this.controls.getObject().position.z - Math.cos(this.controls.getObject().rotation.y + Math.PI / 2) * 5
+		);
+
+		let aimDir = new THREE.Vector3();
+		aimDir = this.controls.getDirection(aimDir);
+		var ray = new THREE.Ray();
+		ray.set(
+			this.controls.getObject().position,
+			aimDir
+		);
+		this.gunTarget = ray.at(2000);
+		this.gun.lookAt(this.gunTarget);
+		/////////////////////////////
 
 		this.socketHandler.tick();
 
@@ -262,100 +261,17 @@ class Engine {
 		this.renderer.render(this.scene, this.camera);
 	}
 
-	anim_velocity(delta) {
-		if (!this.player.focus) return;
+	animatePlayer(delta) {
+		if (!this.player.isFocused()) return;
 
-		/* Jump */
-		if (this.player.keys[constants.KEY_SPACE] && !this.player.airborne) {
-			this.player.velocity.y += this.settings.jumpVelocity;
-			this.player.airborne = true;
+		this.player.setDelta(delta);
+		if (this.player.isJumping()) {
+			this.player.jump();
 		}
-
-		/* Update velocity */
-		let speed = (this.player.aiming) ? 50 : 100;
-		let delta_speed = speed * this.settings.speed * delta;
-		this.player.velocity.z -= (this.player.keys[constants.KEY_W]) ? delta_speed : 0;
-		this.player.velocity.x -= (this.player.keys[constants.KEY_A]) ? delta_speed : 0;
-		this.player.velocity.z += (this.player.keys[constants.KEY_S]) ? delta_speed : 0;
-		this.player.velocity.x += (this.player.keys[constants.KEY_D]) ? delta_speed : 0;
-	}
-
-	anim_retardation(delta) {
-		this.player.velocity.x -= this.player.velocity.x * this.settings.retardation * delta;
-		this.player.velocity.z -= this.player.velocity.z * this.settings.retardation * delta;
-		this.player.velocity.y -= (this.player.airborne) ? 9.8 * this.player.wheight * delta : 0;
-	}
-
-	anim_translation(delta) {
-		this.controls.getObject().translateX(this.player.velocity.x * delta);
-		this.controls.getObject().translateY(this.player.velocity.y * delta);
-		this.controls.getObject().translateZ(this.player.velocity.z * delta);
-	}
-
-	anim_collision() {
-		let rayHits, actualDist;
-		let raycaster = new THREE.Raycaster;
-		raycaster.ray.origin.copy(this.controls.getObject().position);
-
-		/* Down */
-		raycaster.ray.direction.set(0, -1, 0);
-		rayHits = raycaster.intersectObjects(this.objects, true);
-
-		if ((rayHits.length > 0) && (rayHits[0].face.normal.y > 0)) {
-			actualDist = Math.abs(rayHits[0].distance);
-
-			/* Falling down */
-			if((this.player.velocity.y <= 0) && (actualDist < this.player.height)) {
-				this.controls.getObject().position.y += this.player.height - actualDist;
-				this.player.velocity.y = 0;
-				this.player.airborne = false;
-
-			/* Dropping down */
-			} else if ((this.player.velocity.y == 0) && (actualDist > this.player.height )) {
-				if (rayHits[0].face.normal.y != 1 && actualDist < this.player.height + 5) {
-					this.controls.getObject().position.y -= actualDist - this.player.height;
-				} else {
-					this.player.airborne = true;
-				}
-			}
-		}
-
-		/* If not moving, don't cast rays */
-		if (this.player.velocity.length() < this.settings.nullVelocity) return;
-
-		let buglet;
-
-		let checkRay = (axis, dir) => {
-			rayHits = raycaster.intersectObjects(this.objects, true);
-			if(rayHits.length > 0) {
-				actualDist = Math.abs(rayHits[0].distance);
-
-				this.buglets[buglet].position.copy(rayHits[0].point);
-
-				if(actualDist < this.player.rayspace) {
-					if (axis > 0) {
-						this.controls.getObject().position.x += (this.player.rayspace - actualDist) * dir;
-					} else {
-						this.controls.getObject().position.z += (this.player.rayspace - actualDist) * dir;
-					}
-				}
-			}
-		};
-
-		/* Ray origin from half player height */
-		raycaster.ray.origin.y -= this.player.height / 2;
-		/* Right */
-		buglet = 0;
-		raycaster.ray.direction.set(1, 0, 0);	checkRay(1, -1);
-		/* Left */
-		buglet = 1;
-		raycaster.ray.direction.set(-1, 0, 0);	checkRay(1, 1);
-		/* Front */
-		buglet = 2;
-		raycaster.ray.direction.set(0, 0, -1);	checkRay(0, 1);
-		/* Back */
-		buglet = 3;
-		raycaster.ray.direction.set(0, 0, 1);	checkRay(0, -1);
+		this.player.setVelocity();
+		this.player.setFriction();
+		this.player.detectCollisions(this.objects);
+		this.player.translate();
 	}
 
 	onJoin(data) {

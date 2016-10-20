@@ -1,14 +1,15 @@
 import * as constants from '../const';
 import Process from '../core/Process';
 import Engine from './Engine';
+import SocketHandler from './SocketHandler';
 
 class JStrike extends Process {
 
-	constructor(io, response) {
+	constructor(io, serverState) {
 		super();
 
 		this.io = io;
-		this.config = response.config;
+		this.config = serverState.config;
 	}
 
 	start() {
@@ -23,13 +24,13 @@ class JStrike extends Process {
 					</div>
 				</div>
 			</div>`;
+		this.engine = new Engine(this.config);
+		this.socketHandler = new SocketHandler(this.io);
 		this.initClient();
 	}
 
 	kill() {
-		cancelAnimationFrame(this.engine.reqAnimFrame);
-		this.engine = null;
-		delete this.engine;
+		this.engine.kill();
 		document.getElementById('jstrike').remove();
 	}
 
@@ -61,7 +62,7 @@ class JStrike extends Process {
 	}
 
 	initClient() {
-		this.engine = new Engine(this.io, this.config);
+		this.engine.initSocketHandler(this.socketHandler);
 		this.engine.initPointerLock();
 		this.engine.initGraphics();
 		this.engine.loadAssets();
@@ -69,10 +70,8 @@ class JStrike extends Process {
 
 		/* Menu exit listener */
 		this.engine.menuExit.addEventListener('click', (e) => {
-			this.io.emit('disconnecting');
-			this.interrupt({
-				type: 'killMe'
-			})
+			this.socketHandler.disconnecting();
+			this.interrupt({type: 'killMe'})
 		}, false);
 	}
 }
