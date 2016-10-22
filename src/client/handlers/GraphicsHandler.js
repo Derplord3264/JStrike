@@ -1,24 +1,25 @@
 import * as THREE from 'three';
-import Shader from './Shader';
-import '../lib/shaders/EffectComposer';
-import '../lib/shaders/ConvolutionShader';
-import '../lib/shaders/CopyShader';
-import '../lib/shaders/SSAOShader';
-import '../lib/shaders/FXAAShader';
-import '../lib/shaders/RenderPass';
-import '../lib/shaders/ShaderPass';
-import '../lib/shaders/BloomPass';
-import '../lib/shaders/MaskPass';
+import ViewHandler from './ViewHandler';
+import Shader from '../Shader';
+import '../../lib/shaders/EffectComposer';
+import '../../lib/shaders/ConvolutionShader';
+import '../../lib/shaders/CopyShader';
+import '../../lib/shaders/SSAOShader';
+import '../../lib/shaders/FXAAShader';
+import '../../lib/shaders/RenderPass';
+import '../../lib/shaders/ShaderPass';
+import '../../lib/shaders/BloomPass';
+import '../../lib/shaders/MaskPass';
 
 class GraphicsHandler {
 
 	constructor() {
-		this.renderer, this.camera, this.scene;
+		this.renderer, this.camera,
+		this.viewHandler = new ViewHandler;
 		this.shader = new Shader;
 
 		this.fov = 80;
 		this.postProcessing = false;
-
 		this.bloomEnabled = false;
 		this.fxaaEnabled = true;
 		this.ssaoEnabled = false;
@@ -28,6 +29,7 @@ class GraphicsHandler {
 	init() {
 		/* Renderer */
 		this.renderer = new THREE.WebGLRenderer;
+		this.renderer.autoClear = false;
 		this.renderer.setClearColor(0x2f588e);
 		this.renderer.setPixelRatio(window.devicePixelRatio);
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -35,9 +37,6 @@ class GraphicsHandler {
 
 		/* Camera */
 		this.camera = new THREE.PerspectiveCamera(this.fov, window.innerWidth / window.innerHeight, 1, 7000);
-		
-		/* Scene */
-		this.scene = new THREE.Scene;
 
 		this.initEffectComposer();
 
@@ -122,21 +121,18 @@ class GraphicsHandler {
 		this.composer.addPass(effectCopy);
 	}
 
-	addScene(object) {
-		this.scene.add(object);
-	}
-
-	renderToScreen() {
-		//this.renderer.autoClear = false;
-		//this.renderer.clear(true, true, false);
-		this.renderer.render(this.scene, this.camera);
+	addToView(view, object) {
+		this.viewHandler.addToView(view, object);
 	}
 
 	render() {
-		let renderTarget = this.composer.renderTarget2;
-		this.renderer.autoClear = false;
-		this.renderer.clearTarget(renderTarget, true, true, false);
-		this.renderer.render(this.scene, this.camera, renderTarget);
+		//let renderTarget = this.composer.renderTarget2;
+		//this.renderer.clearTarget(renderTarget, true, true, false);
+		this.renderer.clear();
+		this.renderer.render(this.viewHandler.gameView, this.camera);
+
+		this.renderer.clearDepth();
+		this.renderer.render(this.viewHandler.playerView, this.camera);
 	}
 
 	renderDepthTarget() {
@@ -148,16 +144,13 @@ class GraphicsHandler {
 	}
 
 	draw() {
-		if (this.postProcessing) {
-			this.render();
+		this.render();
 
+		if (this.postProcessing) {
 			if (this.ssaoEnabled) {
 				this.renderDepthTarget();
 			}
-
 			this.composer.render();
-		} else {
-			this.renderToScreen();
 		}
 	}
 }

@@ -1,4 +1,4 @@
-import * as constants from '../const';
+import * as constants from '../../const';
 
 class SocketHandler {
 
@@ -22,7 +22,7 @@ class SocketHandler {
 
 		if (this.engine.player.velocity.length() > constants.NULL_VELOCITY) {
 			this.io.emit('move', {
-				pos: this.engine.controls.getObject().position,
+				pos: this.engine.player.getPosition(),
 				vel: {
 					x: this.engine.player.velocity.x,
 					y: this.engine.player.velocity.y,

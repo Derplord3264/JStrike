@@ -1,7 +1,7 @@
 import * as constants from '../const';
 import Process from '../core/Process';
 import Engine from './Engine';
-import SocketHandler from './SocketHandler';
+import SocketHandler from './handlers/SocketHandler';
 
 class JStrike extends Process {
 

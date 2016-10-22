@@ -1,5 +1,6 @@
 import * as constants from '../const';
 import * as THREE from 'three';
+import PointerLockControls from 'three-pointerlock';
 
 class Player {
 
@@ -24,8 +25,24 @@ class Player {
 		this.delta;
 	}
 
-	setControls(controls) {
-		this.controls = controls;
+	init(camera) {
+		this.controls = new PointerLockControls(camera);
+	}
+
+	setControls(state) {
+		this.controls.enabled = state;
+	}
+
+	setPosition(pos) {
+		this.controls.getObject().position.copy(pos);
+	}
+
+	getPosition() {
+		return this.controls.getObject().position;
+	}
+
+	getDirection() {
+		return this.controls.getDirection(new THREE.Vector3);
 	}
 
 	setKey(key, direction) {
@@ -69,15 +86,15 @@ class Player {
 	}
 
 	translate() {
-		this.controls.translateX(this.velocity.x * this.delta);
-		this.controls.translateY(this.velocity.y * this.delta);
-		this.controls.translateZ(this.velocity.z * this.delta);
+		this.controls.getObject().translateX(this.velocity.x * this.delta);
+		this.controls.getObject().translateY(this.velocity.y * this.delta);
+		this.controls.getObject().translateZ(this.velocity.z * this.delta);
 	}
 
 	detectCollisions(objects) {
 		let rayHits, actualDist;
 		let raycaster = new THREE.Raycaster;
-		raycaster.ray.origin.copy(this.controls.position);
+		raycaster.ray.origin.copy(this.controls.getObject().position);
 
 		/* Down */
 		raycaster.ray.direction.set(0, -1, 0);
@@ -88,14 +105,14 @@ class Player {
 
 			/* Falling down */
 			if((this.velocity.y <= 0) && (actualDist < this.height)) {
-				this.controls.position.y += this.height - actualDist;
+				this.controls.getObject().position.y += this.height - actualDist;
 				this.velocity.y = 0;
 				this.airborne = false;
 
 			/* Dropping down */
 			} else if ((this.velocity.y == 0) && (actualDist > this.height )) {
 				if (rayHits[0].face.normal.y != 1 && actualDist < this.height + 5) {
-					this.controls.position.y -= actualDist - this.height;
+					this.controls.getObject().position.y -= actualDist - this.height;
 				} else {
 					this.airborne = true;
 				}
@@ -109,9 +126,9 @@ class Player {
 
 				if(actualDist < this.rayspace) {
 					if (axis > 0) {
-						this.controls.position.x += (this.rayspace - actualDist) * dir;
+						this.controls.getObject().position.x += (this.rayspace - actualDist) * dir;
 					} else {
-						this.controls.position.z += (this.rayspace - actualDist) * dir;
+						this.controls.getObject().position.z += (this.rayspace - actualDist) * dir;
 					}
 				}
 			}

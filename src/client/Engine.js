@@ -1,7 +1,6 @@
 import * as constants from '../const';
 import * as THREE from 'three';
-import PointerLockControls from 'three-pointerlock';
-import GraphicsHandler from './GraphicsHandler';
+import GraphicsHandler from './handlers/GraphicsHandler';
 import Player from './Player';
 import '../lib/loaders/DDSLoader';
 import '../lib/loaders/MTLLoader';
@@ -14,10 +13,7 @@ class Engine {
 		this.config = config;
 
 		/* Engine */
-		this.controls, this.listener, this.reqAnimFrame;
-
-		this.graphicsHandler = new GraphicsHandler;
-		this.player = new Player;
+		this.listener, this.reqAnimFrame;
 
 		this.objects = [];
 		this.enemies = [];
@@ -44,10 +40,25 @@ class Engine {
 
 	init() {
 		this.socketHandler.init(this);
+
+		this.graphicsHandler = new GraphicsHandler;
 		this.graphicsHandler.init();
 
+		this.player = new Player;
+		this.player.init(this.graphicsHandler.camera);
+		this.player.setPosition(new THREE.Vector3(
+			this.config.pos.x,
+			this.config.pos.y,
+			this.config.pos.z
+		));
+
+		this.graphicsHandler.addToView('player', this.player.controls.getObject());
+
+		/* Light */
+		let light = new THREE.HemisphereLight(0xffffff, 0xe6c5a2, 0.75);
+		this.graphicsHandler.addToView('game', light);
+		
 		this.initPointerLock();
-		this.initControls();
 		this.loadAssets();
 		this.animate();
 	}
@@ -58,11 +69,11 @@ class Engine {
 		let pointerLockChange = (e) => {
 			if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
 				this.player.setFocus(true);
-				this.controls.enabled = true;
+				this.player.setControls(true);
 				this.menu.style.display = 'none';
 			} else {
 				this.player.setFocus(false);
-				this.controls.enabled = false;
+				this.player.setControls(false);
 				this.menu.style.display = 'block';
 			}
 		};
@@ -86,16 +97,6 @@ class Engine {
 		}, false);
 	}
 
-	initControls() {
-		this.controls = new PointerLockControls(this.graphicsHandler.camera);
-		this.controls.getObject().position.set(this.config.pos.x, this.config.pos.y, this.config.pos.z);
-		this.player.setControls(this.controls.getObject());
-		this.graphicsHandler.addScene(this.controls.getObject());
-		/* Light */
-		let light = new THREE.HemisphereLight(0xffffff, 0xe6c5a2, 0.75);
-		this.graphicsHandler.addScene(light);
-	}
-
 	loadAssets() {
 
 		/* Map */
@@ -111,7 +112,7 @@ class Engine {
 			objLoader.load(`${this.config.map}.obj`, (object) => {
 
 				this.objects.push(object)
-				this.graphicsHandler.addScene(object);
+				this.graphicsHandler.addToView('game', object);
 				this.waitGroup--;
 
 			}, (xhr) => {
@@ -151,7 +152,7 @@ class Engine {
 			skyBox.scale.set(-1, 1, 1);
 			skyBox.eulerOrder = 'XZY';
 			//this.renderDepth = 1000.0;
-			this.graphicsHandler.addScene(skyBox);
+			this.graphicsHandler.addToView('game', skyBox);
 		});
 
 		/* Gun */
@@ -164,9 +165,9 @@ class Engine {
 			});
 			//self.gun.lookAt(self.gunTarget);
 			//this.gun.position.set(10, -10, 0);
-			this.gun.rotation.y = Math.PI;
+			//this.gun.rotation.y = Math.PI;
 			//this.controls.getObject().add(this.gun);
-			this.graphicsHandler.addScene(this.gun);
+			this.graphicsHandler.addToView('player', this.gun);
 			this.waitGroup--;
 		}, (xhr) => {
 			this.loadAssetsHelper(1, 'Gun', xhr);
@@ -216,13 +217,10 @@ class Engine {
 		this.animatePlayer(delta);
 
 		/////////////////////////////
-
-		let aimDir = new THREE.Vector3();
-		aimDir = this.controls.getDirection(aimDir);
 		var ray = new THREE.Ray();
 		ray.set(
-			this.controls.getObject().position,
-			aimDir
+			this.player.controls.getObject().position,
+			this.player.getDirection()
 		);
 		this.gunTarget = ray.at(2000);
 		this.gun.lookAt(this.gunTarget);
@@ -266,7 +264,7 @@ class Engine {
 			data.pos.z,
 		);
 		this.enemies[data.id].name = data.id;
-		this.graphicsHandler.addScene(this.enemies[data.id]);
+		this.graphicsHandler.addToView('game', this.enemies[data.id]);
 	}
 
 	onDisconnecting(client_id) {
