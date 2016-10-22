@@ -1,28 +1,23 @@
 import * as constants from '../const';
-import Player from './Player';
 import * as THREE from 'three';
 import PointerLockControls from 'three-pointerlock';
-import '../lib/DDSLoader';
-import '../lib/MTLLoader';
-import '../lib/OBJLoader';
+import GraphicsHandler from './GraphicsHandler';
+import Player from './Player';
+import '../lib/loaders/DDSLoader';
+import '../lib/loaders/MTLLoader';
+import '../lib/loaders/OBJLoader';
 
 class Engine {
 
-	constructor(config) {
+	constructor(socketHandler, config) {
+		this.socketHandler = socketHandler;
 		this.config = config;
 
 		/* Engine */
-		this.camera, this.scene, this.renderer,
 		this.controls, this.listener, this.reqAnimFrame;
 
-		/* Player */
+		this.graphicsHandler = new GraphicsHandler;
 		this.player = new Player;
-
-		/* Settings */
-		this.settings = {
-			fov: 80,
-			nullVelocity: 0.1
-		}
 
 		this.objects = [];
 		this.enemies = [];
@@ -47,9 +42,14 @@ class Engine {
 		cancelAnimationFrame(this.reqAnimFrame);
 	}
 
-	initSocketHandler(socketHandler) {
-		this.socketHandler = socketHandler;
+	init() {
 		this.socketHandler.init(this);
+		this.graphicsHandler.init();
+
+		this.initPointerLock();
+		this.initControls();
+		this.loadAssets();
+		this.animate();
 	}
 
 	initPointerLock() {
@@ -86,36 +86,14 @@ class Engine {
 		}, false);
 	}
 
-	initGraphics() {
-		/* Renderer */
-		this.renderer = new THREE.WebGLRenderer;
-		this.renderer.setClearColor(0x2f588e);
-		this.renderer.setPixelRatio(window.devicePixelRatio);
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		document.getElementById('jstrike').appendChild(this.renderer.domElement);
-
-		/* Scene */
-		this.scene = new THREE.Scene;
-
-		/* Camera */
-		this.camera = new THREE.PerspectiveCamera(this.settings.fov, window.innerWidth / window.innerHeight, 1, 7000);
-		
-		/* Camera controls */
-		this.controls = new PointerLockControls(this.camera);
+	initControls() {
+		this.controls = new PointerLockControls(this.graphicsHandler.camera);
 		this.controls.getObject().position.set(this.config.pos.x, this.config.pos.y, this.config.pos.z);
-		this.scene.add(this.controls.getObject());
 		this.player.setControls(this.controls.getObject());
-
+		this.graphicsHandler.addScene(this.controls.getObject());
 		/* Light */
 		let light = new THREE.HemisphereLight(0xffffff, 0xe6c5a2, 0.75);
-		this.scene.add(light);
-
-		/* Resize event listener */
-		window.addEventListener('resize', () => {
-			this.camera.aspect = window.innerWidth / window.innerHeight;
-			this.camera.updateProjectionMatrix();
-			this.renderer.setSize(window.innerWidth, window.innerHeight);
-		}, false);
+		this.graphicsHandler.addScene(light);
 	}
 
 	loadAssets() {
@@ -133,7 +111,7 @@ class Engine {
 			objLoader.load(`${this.config.map}.obj`, (object) => {
 
 				this.objects.push(object)
-				this.scene.add(object);
+				this.graphicsHandler.addScene(object);
 				this.waitGroup--;
 
 			}, (xhr) => {
@@ -173,7 +151,7 @@ class Engine {
 			skyBox.scale.set(-1, 1, 1);
 			skyBox.eulerOrder = 'XZY';
 			//this.renderDepth = 1000.0;
-			this.scene.add(skyBox);
+			this.graphicsHandler.addScene(skyBox);
 		});
 
 		/* Gun */
@@ -188,7 +166,7 @@ class Engine {
 			//this.gun.position.set(10, -10, 0);
 			this.gun.rotation.y = Math.PI;
 			//this.controls.getObject().add(this.gun);
-			this.scene.add(this.gun);
+			this.graphicsHandler.addScene(this.gun);
 			this.waitGroup--;
 		}, (xhr) => {
 			this.loadAssetsHelper(1, 'Gun', xhr);
@@ -238,11 +216,6 @@ class Engine {
 		this.animatePlayer(delta);
 
 		/////////////////////////////
-		this.gun.position.set(
-			this.controls.getObject().position.x - Math.sin(this.controls.getObject().rotation.y + Math.PI / 2) * 5,
-			this.controls.getObject().position.y + 2.5,
-			this.controls.getObject().position.z - Math.cos(this.controls.getObject().rotation.y + Math.PI / 2) * 5
-		);
 
 		let aimDir = new THREE.Vector3();
 		aimDir = this.controls.getDirection(aimDir);
@@ -253,12 +226,20 @@ class Engine {
 		);
 		this.gunTarget = ray.at(2000);
 		this.gun.lookAt(this.gunTarget);
+
+		let b = ray.at(-20);
+		this.gun.position.set(
+			b.x,// - Math.sin(this.controls.getObject().rotation.y + Math.PI / 2) * 5,
+			b.y,// + 2.5,
+			b.z// - Math.cos(this.controls.getObject().rotation.y + Math.PI / 2) * 5
+		);
 		/////////////////////////////
 
 		this.socketHandler.tick();
 
 		/* Render frame */
-		this.renderer.render(this.scene, this.camera);
+		this.graphicsHandler.draw();
+		//this.renderer.render(this.scene, this.camera);
 	}
 
 	animatePlayer(delta) {
@@ -285,7 +266,7 @@ class Engine {
 			data.pos.z,
 		);
 		this.enemies[data.id].name = data.id;
-		this.scene.add(this.enemies[data.id]);
+		this.graphicsHandler.addScene(this.enemies[data.id]);
 	}
 
 	onDisconnecting(client_id) {

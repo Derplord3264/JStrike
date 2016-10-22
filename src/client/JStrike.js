@@ -24,8 +24,8 @@ class JStrike extends Process {
 					</div>
 				</div>
 			</div>`;
-		this.engine = new Engine(this.config);
 		this.socketHandler = new SocketHandler(this.io);
+		this.engine = new Engine(this.socketHandler, this.config);
 		this.initClient();
 	}
 
@@ -62,11 +62,7 @@ class JStrike extends Process {
 	}
 
 	initClient() {
-		this.engine.initSocketHandler(this.socketHandler);
-		this.engine.initPointerLock();
-		this.engine.initGraphics();
-		this.engine.loadAssets();
-		this.engine.animate();
+		this.engine.init(this.socketHandler);
 
 		/* Menu exit listener */
 		this.engine.menuExit.addEventListener('click', (e) => {

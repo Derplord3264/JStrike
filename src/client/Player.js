@@ -6,8 +6,8 @@ class Player {
 	constructor() {
 		this.velocity = new THREE.Vector3;
 		this.height = 55;
-		this.wheight = 80;
-		this.speed = 65;
+		this.wheight = 85;
+		this.speed = 25;
 		this.friction = 10;
 		this.jumpVelocity = 300;
 		this.nullVelocity = 0.1;
@@ -54,7 +54,7 @@ class Player {
 	}
 
 	setVelocity() {
-		let speed = (this.aiming) ? 0.5 : 1;
+		let speed = (this.aiming) ? 50 : 100;
 		let delta_speed = speed * this.speed * this.delta;
 		this.velocity.z -= (this.keys[constants.KEY_W]) ? delta_speed : 0;
 		this.velocity.x -= (this.keys[constants.KEY_A]) ? delta_speed : 0;
@@ -69,9 +69,9 @@ class Player {
 	}
 
 	translate() {
-		this.controls.translateX(this.velocity.x);
-		this.controls.translateY(this.velocity.y);
-		this.controls.translateZ(this.velocity.z);
+		this.controls.translateX(this.velocity.x * this.delta);
+		this.controls.translateY(this.velocity.y * this.delta);
+		this.controls.translateZ(this.velocity.z * this.delta);
 	}
 
 	detectCollisions(objects) {
