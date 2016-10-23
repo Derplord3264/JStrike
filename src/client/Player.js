@@ -1,10 +1,15 @@
 import * as constants from '../const';
 import * as THREE from 'three';
 import PointerLockControls from 'three-pointerlock';
+import WeaponHandler from './handlers/WeaponHandler';
 
-class Player {
+class Player extends WeaponHandler {
 
 	constructor() {
+		super();
+		this.graphicsHandler, this.assetHandler,
+		this.controls;
+
 		this.velocity = new THREE.Vector3;
 		this.height = 55;
 		this.wheight = 85;
@@ -20,13 +25,14 @@ class Player {
 		this.rayspace = 20;
 		this.focus = false;
 
-		this.controls;
-		this.keys = {};
 		this.delta;
+		this.keys = {};
 	}
 
-	init(camera) {
-		this.controls = new PointerLockControls(camera);
+	init(graphicsHandler, assetHandler) {
+		this.graphicsHandler = graphicsHandler;
+		this.assetHandler = assetHandler;
+		this.controls = new PointerLockControls(this.graphicsHandler.camera);
 	}
 
 	setControls(state) {
@@ -47,10 +53,6 @@ class Player {
 
 	setKey(key, direction) {
 		this.keys[key] = direction;
-	}
-
-	setDelta(delta) {
-		this.delta = delta;
 	}
 
 	setFocus(state) {
@@ -146,6 +148,21 @@ class Player {
 		raycaster.ray.direction.set(0, 0, -1);	checkRay(0, 1);
 		/* Back */
 		raycaster.ray.direction.set(0, 0, 1);	checkRay(0, -1);
+	}
+
+	animate(delta) {
+		if (!this.isFocused()) return;
+
+		this.delta = delta;
+		if (this.isJumping()) {
+			this.jump();
+		}
+		this.setVelocity();
+		this.setFriction();
+		this.detectCollisions(this.graphicsHandler.getObjects('game'));
+		this.translate();
+
+		this.animateWeapon(this);
 	}
 }
 

@@ -19,8 +19,8 @@ class GraphicsHandler {
 		this.shader = new Shader;
 
 		this.fov = 80;
-		this.postProcessing = false;
-		this.bloomEnabled = false;
+		this.postProcessing = true;
+		this.bloomEnabled = true;
 		this.fxaaEnabled = true;
 		this.ssaoEnabled = false;
 		this.halfSizeEnabled = false;
@@ -41,11 +41,7 @@ class GraphicsHandler {
 		this.initEffectComposer();
 
 		/* Resize event listener */
-		window.addEventListener('resize', () => {
-			this.camera.aspect = window.innerWidth / window.innerHeight;
-			this.camera.updateProjectionMatrix();
-			this.renderer.setSize(window.innerWidth, window.innerHeight);
-		}, false);
+		window.addEventListener('resize', () => this.onReSize(), false);
 	}
 
 	onReSize() {
@@ -125,14 +121,26 @@ class GraphicsHandler {
 		this.viewHandler.addToView(view, object);
 	}
 
+	getObjects(view) {
+		return this.viewHandler.getObjects(view);
+	}
+
 	render() {
-		//let renderTarget = this.composer.renderTarget2;
-		//this.renderer.clearTarget(renderTarget, true, true, false);
 		this.renderer.clear();
 		this.renderer.render(this.viewHandler.gameView, this.camera);
 
 		this.renderer.clearDepth();
 		this.renderer.render(this.viewHandler.playerView, this.camera);
+	}
+
+	renderPP() {
+		let renderTarget = this.composer.renderTarget2;
+		this.renderer.clearTarget(renderTarget, true, true, false);
+
+		this.renderer.render(this.viewHandler.gameView, this.camera, renderTarget);
+
+		this.renderer.clearTarget(renderTarget, false, true, false);
+		this.renderer.render(this.viewHandler.playerView, this.camera, renderTarget);
 	}
 
 	renderDepthTarget() {
@@ -144,13 +152,15 @@ class GraphicsHandler {
 	}
 
 	draw() {
-		this.render();
-
 		if (this.postProcessing) {
+			this.renderPP();
+
 			if (this.ssaoEnabled) {
 				this.renderDepthTarget();
 			}
 			this.composer.render();
+		} else {
+			this.render();
 		}
 	}
 }

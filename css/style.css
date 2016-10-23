@@ -52,6 +52,16 @@ html, body {
 	font-family: monospace;
 	position: absolute;
 	z-index: 100;
+} #loader-bar {
+	width: 90%;
+	margin: -25px 0 0 5%;
+	top: 50%;
+	border: 5px solid #ffffff;
+	position: absolute;
+} #loader-pc {
+	width: 0%;
+	height: 50px;
+	background-color: #ffffff;
 }
 
 #menu {

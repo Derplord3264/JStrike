@@ -8,14 +8,18 @@ class JStrike extends Process {
 	constructor(io, serverState) {
 		super();
 
-		this.io = io;
-		this.config = serverState.config;
+		this.socketHandler = new SocketHandler(io);
+		this.engine = new Engine(this.socketHandler, serverState.config);
 	}
 
 	start() {
 		document.body.innerHTML += `
 			<div id="jstrike">
-				<div id="loader"></div>
+				<div id="loader">
+					<div id="loader-bar">
+						<div id="loader-pc"></div>
+					</div>
+				</div>
 				<div id="menu">
 					<div id="menu-container">
 						<b id="menu-continue">CONTINUE</b>
@@ -24,8 +28,11 @@ class JStrike extends Process {
 					</div>
 				</div>
 			</div>`;
-		this.socketHandler = new SocketHandler(this.io);
-		this.engine = new Engine(this.socketHandler, this.config);
+		this.menu = document.getElementById('menu');
+		this.menuContinue = document.getElementById('menu-continue');
+		this.menuSettings = document.getElementById('menu-settings');
+		this.menuExit = document.getElementById('menu-exit');
+
 		this.initClient();
 	}
 
@@ -37,35 +44,30 @@ class JStrike extends Process {
 	input(e) {
 		/* 1 = down, 0 = up */
 		let direction = (e.type == 'keydown' || e.type == 'keypress') ? 1 : 0;
-		let validKey = true;
+		let filter = [
+			constants.KEY_W,
+			constants.KEY_A,
+			constants.KEY_S,
+			constants.KEY_D,
+			constants.KEY_SPACE,
+			49,
+			50
+		];
 
-		/* Filter keys and send allowed ones to the engine */
-		switch (e.keyCode) {
-			case constants.KEY_W:
-				this.engine.input(constants.KEY_W, direction);
-			break;
-			case constants.KEY_A:
-				this.engine.input(constants.KEY_A, direction);
-			break;
-			case constants.KEY_S:
-				this.engine.input(constants.KEY_S, direction);
-			break;
-			case constants.KEY_D:
-				this.engine.input(constants.KEY_D, direction);
-			break;
-			case constants.KEY_SPACE:
-				this.engine.input(constants.KEY_SPACE, direction);
-			break;
-			default:
-				validKey = false;
-		}
+		if (filter.indexOf(e.keyCode) >= 0)
+			this.engine.input(e.keyCode, direction);
 	}
 
 	initClient() {
-		this.engine.init(this.socketHandler);
+		this.engine.init();
 
+		/* Menu continue listener */
+		this.menuContinue.addEventListener('click', () => {
+			this.menu.style.display = 'none';
+			this.engine.requestPointerLock();
+		}, false);
 		/* Menu exit listener */
-		this.engine.menuExit.addEventListener('click', (e) => {
+		this.menuExit.addEventListener('click', (e) => {
 			this.socketHandler.disconnecting();
 			this.interrupt({type: 'killMe'})
 		}, false);

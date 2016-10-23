@@ -8,3 +8,18 @@ export const KEY_S = 83;
 export const KEY_D = 68;
 
 export const NULL_VELOCITY = 0.1;
+
+export const WEAPON = {
+	'ak-47-kalashnikov': {
+		pos: {
+			default: 0,
+			aiming: 0
+		}
+	},
+	'm1911-handgun': {
+		pos: {
+			default: 20,
+			aiming: 0
+		}
+	}
+}

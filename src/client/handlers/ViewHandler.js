@@ -19,6 +19,19 @@ class ViewHandler {
 				console.warn('ViewHandler::addToView Unknown view.');
 		}
 	}
+
+	getObjects(view) {
+		switch (view) {
+			case 'game':
+				return this.gameView.children;
+			break;
+			case 'player':
+				return this.playerView.children;
+			break;
+			default:
+				return null;
+		}
+	}
 }
 
 export default ViewHandler;
