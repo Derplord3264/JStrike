@@ -44,6 +44,13 @@ class GraphicsHandler {
 		window.addEventListener('resize', () => this.onReSize(), false);
 	}
 
+	zoom(val) {
+		if (this.camera.zoom == val) return;
+
+		this.camera.zoom = val;
+		this.camera.updateProjectionMatrix();
+	}
+
 	onReSize() {
 		let width = window.innerWidth;
 		let height = window.innerHeight;

@@ -43,19 +43,32 @@ class JStrike extends Process {
 
 	input(e) {
 		/* 1 = down, 0 = up */
-		let direction = (e.type == 'keydown' || e.type == 'keypress') ? 1 : 0;
+		let direction = (e.type == 'keydown'
+			|| e.type == 'keypress'
+			|| e.type == 'mousedown') ? 1 : 0;
 		let filter = [
+			constants.KEY_SPACE,
+			constants.KEY_1,
+			constants.KEY_2,
 			constants.KEY_W,
 			constants.KEY_A,
 			constants.KEY_S,
-			constants.KEY_D,
-			constants.KEY_SPACE,
-			49,
-			50
+			constants.KEY_D
+		];
+		let mouseFilter = [
+			constants.MOUSE_LEFT,
+			constants.MOUSE_RIGHT,
 		];
 
-		if (filter.indexOf(e.keyCode) >= 0)
-			this.engine.input(e.keyCode, direction);
+		let code = null;
+		if (filter.indexOf(e.keyCode) >= 0) {
+			code = e.keyCode;
+		} else if (mouseFilter.indexOf(e.which) >= 0) {
+			code = e.which;
+		}
+
+		if (code)
+			this.engine.input(code, direction);
 	}
 
 	initClient() {

@@ -2,6 +2,7 @@ import * as constants from '../const';
 import * as THREE from 'three';
 import GraphicsHandler from './handlers/GraphicsHandler';
 import AssetHandler from './handlers/AssetHandler';
+import WeaponHandler from './handlers/WeaponHandler';
 import Player from './Player';
 
 class Engine {
@@ -11,6 +12,7 @@ class Engine {
 		this.config = config;
 		this.graphicsHandler = new GraphicsHandler;
 		this.assetHandler = new AssetHandler;
+		this.weaponHandler = new WeaponHandler;
 		this.player = new Player;
 
 		/* Time & sync */
@@ -23,15 +25,7 @@ class Engine {
 
 	input(key, direction) {
 		this.player.setKey(key, direction);
-
-		if (direction > 0) {
-			if (key == 49) {
-				this.player.selectPrimary();
-			}
-			if (key == 50) {
-				this.player.selectSecondary();
-			}
-		}
+		this.weaponHandler.setKey(key, direction);
 	}
 
 	kill() {
@@ -43,8 +37,9 @@ class Engine {
 		this.graphicsHandler.init();
 		this.assetHandler.init(this.graphicsHandler);
 		this.assetHandler.load();
+		this.weaponHandler.init(this.assetHandler, this.player);
 
-		this.player.init(this.graphicsHandler, this.assetHandler);
+		this.player.init(this.graphicsHandler);
 		this.player.setPosition(new THREE.Vector3(
 			this.config.pos.x,
 			this.config.pos.y,
@@ -104,15 +99,18 @@ class Engine {
 		/* Skip if resources not loaded */
 		if (!this.assetHandler.jobsLoaded()) return;
 		if (!this.weaponInit) {
-			this.player.setPrimary(this.config.weapon.primary);
-			this.player.setSecondary(this.config.weapon.secondary);
-			this.player.selectPrimary();
+			this.weaponHandler.setPrimary(this.config.weapon.primary);
+			this.weaponHandler.setSecondary(this.config.weapon.secondary);
+			this.weaponHandler.selectPrimary();
 			this.weaponInit = true;
 			document.getElementById('loader').style.display = 'none';
 		}
 
+		let delta = this.getDelta();
 		/* Animate player */
-		this.player.animate(this.getDelta());
+		this.player.animate(delta);
+		/* Animate weapon */
+		this.weaponHandler.animate(delta);
 		/* Tick socket handler */
 		this.socketHandler.tick();
 		/* Render frame */
