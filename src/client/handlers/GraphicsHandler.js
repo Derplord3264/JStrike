@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as TWEEN from 'tween.js';
 import ViewHandler from './ViewHandler';
 import Shader from '../Shader';
 import '../../lib/shaders/EffectComposer';
@@ -46,9 +47,20 @@ class GraphicsHandler {
 
 	zoom(val) {
 		if (this.camera.zoom == val) return;
+		if (this.animating) return;
+		this.animating = true;
 
-		this.camera.zoom = val;
-		this.camera.updateProjectionMatrix();
+		var from = (val > 1) ? {x: 1} : {x: 2};
+		var to = (val > 1) ? {x: 2} : {x: 1};
+
+		let that = this;
+		let t = new TWEEN.Tween(from).to(to, 50)
+		.onUpdate(function() {
+			that.camera.zoom = this.x;
+			that.camera.updateProjectionMatrix();
+		})
+		.onComplete(() => this.animating = false)
+		.start();
 	}
 
 	onReSize() {

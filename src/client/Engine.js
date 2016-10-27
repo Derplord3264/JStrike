@@ -1,5 +1,6 @@
 import * as constants from '../const';
 import * as THREE from 'three';
+import * as TWEEN from 'tween.js';
 import GraphicsHandler from './handlers/GraphicsHandler';
 import AssetHandler from './handlers/AssetHandler';
 import WeaponHandler from './handlers/WeaponHandler';
@@ -111,6 +112,7 @@ class Engine {
 		this.player.animate(delta);
 		/* Animate weapon */
 		this.weaponHandler.animate(delta);
+		TWEEN.update();
 		/* Tick socket handler */
 		this.socketHandler.tick();
 		/* Render frame */

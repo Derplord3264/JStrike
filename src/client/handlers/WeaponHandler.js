@@ -1,5 +1,6 @@
 import * as constants from '../../const';
 import * as THREE from 'three';
+import * as TWEEN from 'tween.js';
 
 class WeaponHandler {
 
@@ -31,6 +32,8 @@ class WeaponHandler {
 				this.shooting = direction;
 			break;
 			case constants.MOUSE_RIGHT:
+				if (this.aiming != direction)
+					this.animateAim(direction);
 				this.aiming = direction;
 			break;
 		}
@@ -80,9 +83,11 @@ class WeaponHandler {
 	}
 
 	animate(delta) {
-		let wc = constants.WEAPON[this.selected.name];
-		let pos = (this.aiming) ? wc.pos.aiming : wc.pos.default;
-		this.positionGun(pos);
+		if (!this.animating) {
+			let wc = constants.WEAPON[this.selected.name];
+			let pos = (this.aiming) ? wc.pos.aiming : wc.pos.default;
+			this.positionGun(pos);
+		}
 
 		var ray = new THREE.Ray();
 		ray.set(
@@ -90,6 +95,25 @@ class WeaponHandler {
 			this.player.getDirection()
 		);
 		this.selected.lookAt(ray.at(2000));
+	}
+
+	animateAim(direction) {
+		if (this.animating) return;
+		this.animating = true;
+
+		let wc = constants.WEAPON[this.selected.name];
+		var from = (direction > 0) ? wc.pos.default : wc.pos.aiming;
+		var to = (direction > 0) ? wc.pos.aiming : wc.pos.default;
+		from = Object.assign({}, from);
+		to = Object.assign({}, to);
+
+		let that = this;
+		let t = new TWEEN.Tween(from).to(to, 50)
+		.onUpdate(function() {
+			that.positionGun({x: this.x, y: this.y, z: 0});
+		})
+		.onComplete(() => this.animating = false)
+		.start();
 	}
 }
 
