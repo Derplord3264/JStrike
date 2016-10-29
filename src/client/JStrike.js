@@ -60,15 +60,10 @@ class JStrike extends Process {
 			constants.MOUSE_RIGHT,
 		];
 
-		let code = null;
-		if (filter.indexOf(e.keyCode) >= 0) {
-			code = e.keyCode;
-		} else if (mouseFilter.indexOf(e.which) >= 0) {
-			code = e.which;
-		}
-
-		if (code)
+		if (filter.indexOf(e.keyCode) >= 0 || mouseFilter.indexOf(e.which) >= 0) {
+			let code = e.hasOwnProperty('keyCode') ? e.keyCode : e.which;
 			this.engine.input(code, direction);
+		}
 	}
 
 	initClient() {

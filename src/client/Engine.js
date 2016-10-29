@@ -20,13 +20,18 @@ class Engine {
 		this.reqAnimFrame;
 		this.oldTime = performance.now();
 
+		this.keys = {}
+
 		this.weaponInit = false;
 		this.enemies = [];
 	}
 
 	input(key, direction) {
-		this.player.setKey(key, direction);
-		this.weaponHandler.setKey(key, direction);
+		if (!this.keys.hasOwnProperty(key) || this.keys[key] != direction) {
+			this.player.setKey(key, direction);
+			this.weaponHandler.setKey(key, direction);
+		}
+		this.keys[key] = direction;
 	}
 
 	kill() {
@@ -37,6 +42,11 @@ class Engine {
 		this.socketHandler.init(this);
 		this.graphicsHandler.init();
 		this.assetHandler.init(this.graphicsHandler);
+		this.assetHandler.addJob({
+			type: 'objmtl',
+			name: this.config.map,
+			view: 'game'
+		})
 		this.assetHandler.load();
 		this.weaponHandler.init(this.assetHandler, this.player);
 

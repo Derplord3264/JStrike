@@ -25,6 +25,9 @@ class GraphicsHandler {
 		this.fxaaEnabled = true;
 		this.ssaoEnabled = false;
 		this.halfSizeEnabled = false;
+
+		this.animating = false;
+		this.tween;
 	}
 
 	init() {
@@ -45,16 +48,20 @@ class GraphicsHandler {
 		window.addEventListener('resize', () => this.onReSize(), false);
 	}
 
-	zoom(val) {
-		if (this.camera.zoom == val) return;
-		if (this.animating) return;
+	zoom(state) {
+		let val = state ? 2 : 1;
+
+		if (this.animating)
+			this.tween.stop();
 		this.animating = true;
 
-		var from = (val > 1) ? {x: 1} : {x: 2};
-		var to = (val > 1) ? {x: 2} : {x: 1};
+		let far = { x: 1 }
+		let near = { x: 2 }
+		let from = (val > 1) ? far : near;
+		let to = (val > 1) ? near : far;
 
 		let that = this;
-		let t = new TWEEN.Tween(from).to(to, 50)
+		this.tween = new TWEEN.Tween(from).to(to, 50)
 		.onUpdate(function() {
 			that.camera.zoom = this.x;
 			that.camera.updateProjectionMatrix();

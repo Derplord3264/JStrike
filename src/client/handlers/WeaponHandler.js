@@ -11,6 +11,13 @@ class WeaponHandler {
 
 		this.shooting = 0;
 		this.aiming = 0;
+
+		this.animating = false;
+		this.tween;
+
+		this.test_old = null;
+		this.test_tween;
+		this.test_anim = false;
 	}
 
 	init(assetHandler, player) {
@@ -94,11 +101,57 @@ class WeaponHandler {
 			this.player.getPosition(),
 			this.player.getDirection()
 		);
-		this.selected.lookAt(ray.at(2000));
+		let test_new = ray.at(2000);
+
+		if (!this.test_old) {
+			this.test_old = test_new.clone();
+			this.selected.lookAt(test_new);
+			return;
+		}
+		if (this.test_old == test_new) return;
+
+		if (!this.player.aiming) {
+			this.test_old.copy(test_new);
+			this.selected.lookAt(test_new);
+			return;
+		}
+
+		//if (this.test_anim) return;
+			//this.test_tween.stop();
+
+		this.test_anim = true;
+		let from = {
+			x: this.test_old.getComponent(0),
+			y: this.test_old.getComponent(1),
+			z: this.test_old.getComponent(2),
+		}
+		let to = {
+			x: test_new.getComponent(0),
+			y: test_new.getComponent(1),
+			z: test_new.getComponent(2),
+		}
+
+		let that = this;
+		this.test_tween = new TWEEN.Tween(from).to(to, 10)
+		//.easing(TWEEN.Easing.Back.Out)
+		.onUpdate(function() {
+			that.selected.lookAt(new THREE.Vector3(
+				this.x,
+				this.y,
+				this.z
+			));
+		})
+		.onComplete(() => this.test_anim = false)
+		.start();
+
+		this.test_old.copy(test_new);
+
+		//this.selected.lookAt(ray.at(2000));
 	}
 
 	animateAim(direction) {
-		if (this.animating) return;
+		if (this.animating)
+			this.tween.stop();
 		this.animating = true;
 
 		let wc = constants.WEAPON[this.selected.name];
@@ -108,7 +161,7 @@ class WeaponHandler {
 		to = Object.assign({}, to);
 
 		let that = this;
-		let t = new TWEEN.Tween(from).to(to, 50)
+		this.tween = new TWEEN.Tween(from).to(to, 50)
 		.onUpdate(function() {
 			that.positionGun({x: this.x, y: this.y, z: 0});
 		})

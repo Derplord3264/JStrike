@@ -9,7 +9,7 @@ class Player {
 
 		this.velocity = new THREE.Vector3;
 		this.height = 55;
-		this.wheight = 85;
+		this.weight = 85;
 		this.speed = 25;
 		this.friction = 10;
 		this.jumpVelocity = 300;
@@ -49,11 +49,16 @@ class Player {
 
 	setKey(key, direction) {
 		this.keys[key] = direction;
-		this.aiming = (this.keys[constants.MOUSE_RIGHT]) ? true : false;
-		this.shooting = (this.keys[constants.MOUSE_LEFT]) ? true : false;
-		
-		let zoom = (this.aiming) ? 2 : 1;
-		this.graphicsHandler.zoom(zoom);
+
+		switch (key) {
+			case constants.MOUSE_RIGHT:
+				this.aiming = direction;
+				this.graphicsHandler.zoom(this.aiming);
+			break;
+			case constants.MOUSE_LEFT:
+				this.shooting = direction;
+			break;
+		}
 	}
 
 	setFocus(state) {
@@ -65,7 +70,7 @@ class Player {
 	}
 
 	isJumping() {
-		return this.keys[constants.KEY_SPACE] && !this.airborne;
+		return (this.keys[constants.KEY_SPACE] > 0) && !this.airborne;
 	}
 
 	jump() {
@@ -85,7 +90,7 @@ class Player {
 	setFriction() {
 		this.velocity.x -= this.velocity.x * this.friction * this.delta;
 		this.velocity.z -= this.velocity.z * this.friction * this.delta;
-		this.velocity.y -= (this.airborne) ? 9.8 * this.wheight * this.delta : 0;
+		this.velocity.y -= (this.airborne) ? 9.8 * this.weight * this.delta : 0;
 	}
 
 	translate() {

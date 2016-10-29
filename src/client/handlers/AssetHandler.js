@@ -7,12 +7,8 @@ import '../../lib/loaders/OBJLoader';
 class AssetHandler {
 
 	constructor() {
+		this.graphicsHandler;
 		this.jobs = [
-			{
-				type: 'objmtl',
-				name: 'awp_india',//'cs_italy',
-				view: 'game'
-			},
 			{
 				type: 'skydome',
 				name: 'sky.jpg',
@@ -36,6 +32,11 @@ class AssetHandler {
 
 	init(graphicsHandler) {
 		this.graphicsHandler = graphicsHandler;
+	}
+
+	addJob(job) {
+		this.jobs.unshift(job);
+		this.waitGroup = this.jobs.length;
 	}
 
 	getWeapon(weapon) {
@@ -126,7 +127,7 @@ class AssetHandler {
 
 			let skyBox = new THREE.Mesh(geometry, material);
 			skyBox.scale.set(-1, 1, 1);
-			skyBox.eulerOrder = 'XZY';
+			skyBox.rotation.order = 'XZY';
 			this.graphicsHandler.addToView(view, skyBox);
 			this.waitGroup--;
 
