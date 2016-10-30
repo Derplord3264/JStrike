@@ -13,17 +13,28 @@ export const MOUSE_RIGHT = 3;
 
 export const NULL_VELOCITY = 0.1;
 
+export const GUNMODE_SINGLE = 'single';
+export const GUNMODE_AUTOMATIC = 'automatic';
+
 export const WEAPON = {
 	'ak-47-kalashnikov': {
 		pos: {
 			default: {x: 0, y: 0, z: 0},
 			aiming: {x: -4.5, y: 2.75, z: 0}
-		}
+		},
+		mode: 'automatic',
+		rounds: 30,
+		recoil: 1.5,
+		cooldown: 2
 	},
 	'm1911-handgun': {
 		pos: {
 			default: {x: 0, y: 0, z: 0},
 			aiming: {x: -15.75, y: 7, z: 0}
-		}
+		},
+		mode: 'single',
+		rounds: 7,
+		recoil: 5,
+		cooldown: 0
 	}
 }

@@ -1,6 +1,6 @@
 import * as constants from '../const';
 import * as THREE from 'three';
-import PointerLockControls from 'three-pointerlock';
+import PointerLockControls from '../lib/PointerLockControls';
 
 class Player {
 
@@ -8,12 +8,11 @@ class Player {
 		this.graphicsHandler, this.controls;
 
 		this.velocity = new THREE.Vector3;
-		this.height = 55;
+		this.height = 45;
 		this.weight = 85;
 		this.speed = 25;
 		this.friction = 10;
 		this.jumpVelocity = 300;
-		this.nullVelocity = 0.1;
 
 		this.airborne = false;
 		this.moving = false;
@@ -143,7 +142,7 @@ class Player {
 		};
 
 		/* If not moving, don't cast rays */
-		if (this.velocity.length() < this.nullVelocity) return;
+		if (this.velocity.length() < constants.NULL_VELOCITY) return;
 		/* Ray origin from half player height */
 		raycaster.ray.origin.y -= this.height / 2;
 		/* Right */

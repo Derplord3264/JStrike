@@ -7,17 +7,31 @@ class WeaponHandler {
 	constructor() {
 		this.assetHandler;
 		this.primary, this.secondary = null;
+		this.rounds = {
+			primary: 0,
+			secondary: 0
+		}
 		this.selected;
 
 		this.shooting = 0;
 		this.aiming = 0;
+		this.cooldown = 0;
+		this.shot_count = 0;
 
-		this.animating = false;
-		this.tween;
+		this.animating, this.animating_shot = false;
+		this.tween, this.tween_shot;
 
-		this.test_old = null;
-		this.test_tween;
-		this.test_anim = false;
+		this.audio = [];
+		for (var i = 0; i < 30; i++) {
+			this.audio[i] = new Audio('../../assets/weapons/ak-47-kalashnikov/shot.mp3');
+		}
+		this.audio_i = 0;
+	}
+
+	playAudio() {
+		if (this.audio_i >= this.audio.length) this.audio_i = 0;
+		this.audio[this.audio_i].play();
+		this.audio_i++;
 	}
 
 	init(assetHandler, player) {
@@ -37,21 +51,28 @@ class WeaponHandler {
 			break;
 			case constants.MOUSE_LEFT:
 				this.shooting = direction;
+				if (direction < 1) this.shot_count = 0;
+
+				if (this.selected.config.mode == constants.GUNMODE_SINGLE)
+					this.animateShot();
 			break;
 			case constants.MOUSE_RIGHT:
-				if (this.aiming != direction)
-					this.animateAim(direction);
 				this.aiming = direction;
+				this.animateAim(direction);
 			break;
 		}
 	}
 
 	setPrimary(weapon) {
 		this.primary = this.assetHandler.getWeapon(weapon);
+		this.primary.config = constants.WEAPON[this.primary.name];
+		this.primary.rounds = this.primary.config.rounds;
 	}
 
 	setSecondary(weapon) {
 		this.secondary = this.assetHandler.getWeapon(weapon);
+		this.secondary.config = constants.WEAPON[this.secondary.name];
+		this.secondary.rounds = this.secondary.config.rounds;
 	}
 
 	selectPrimary() {
@@ -91,9 +112,13 @@ class WeaponHandler {
 
 	animate(delta) {
 		if (!this.animating) {
-			let wc = constants.WEAPON[this.selected.name];
-			let pos = (this.aiming) ? wc.pos.aiming : wc.pos.default;
-			this.positionGun(pos);
+			let config = this.selected.config;
+			this.positionGun(
+				(this.aiming) ? config.pos.aiming : config.pos.default
+			);
+
+			if (this.selected.config.mode == constants.GUNMODE_AUTOMATIC)
+				this.animateShot();
 		}
 
 		var ray = new THREE.Ray();
@@ -101,52 +126,51 @@ class WeaponHandler {
 			this.player.getPosition(),
 			this.player.getDirection()
 		);
-		let test_new = ray.at(2000);
+		this.selected.lookAt(ray.at(2000));
 
-		if (!this.test_old) {
-			this.test_old = test_new.clone();
-			this.selected.lookAt(test_new);
-			return;
-		}
-		if (this.test_old == test_new) return;
+		if (this.cooldown > 0) this.cooldown--;
+	}
 
-		if (!this.player.aiming) {
-			this.test_old.copy(test_new);
-			this.selected.lookAt(test_new);
-			return;
-		}
+	canShoot() {
+		if (!this.player.isFocused()) return false;
+		if (this.selected.rounds <= 0) return false;
+		if (this.selected.config.mode == constants.GUNMODE_SINGLE
+			&& this.shooting
+			&& this.shot_count > 0) return false;
+		if (this.animating_shot) return false;
+		if (this.cooldown > 0) return false;
 
-		//if (this.test_anim) return;
-			//this.test_tween.stop();
+		return true;
+	}
 
-		this.test_anim = true;
-		let from = {
-			x: this.test_old.getComponent(0),
-			y: this.test_old.getComponent(1),
-			z: this.test_old.getComponent(2),
-		}
-		let to = {
-			x: test_new.getComponent(0),
-			y: test_new.getComponent(1),
-			z: test_new.getComponent(2),
-		}
+	animateShot() {
+		if (!this.shooting) return;
+		if (!this.canShoot()) return;
+
+		this.animating_shot = true;
+
+		let config = this.selected.config;
+		var origin = (this.aiming) ? config.pos.aiming : config.pos.default;
+		origin = Object.assign({}, origin);
+		var dest = Object.assign({}, origin);
+		dest.z -= config.recoil;
+
+		this.player.controls.getPitchObject().rotation.x += 0.01;
+		this.playAudio();
 
 		let that = this;
-		this.test_tween = new TWEEN.Tween(from).to(to, 10)
-		//.easing(TWEEN.Easing.Back.Out)
+		this.tween_shot = new TWEEN.Tween(origin).to(dest, 25)
+		.repeat(1)
+		.yoyo(true)
 		.onUpdate(function() {
-			that.selected.lookAt(new THREE.Vector3(
-				this.x,
-				this.y,
-				this.z
-			));
+			that.positionGun({x: this.x, y: this.y, z: this.z});
 		})
-		.onComplete(() => this.test_anim = false)
+		.onComplete(() => {
+			this.animating_shot = false;
+			this.cooldown = this.selected.config.cooldown;
+			this.shot_count++;
+		})
 		.start();
-
-		this.test_old.copy(test_new);
-
-		//this.selected.lookAt(ray.at(2000));
 	}
 
 	animateAim(direction) {
@@ -154,9 +178,9 @@ class WeaponHandler {
 			this.tween.stop();
 		this.animating = true;
 
-		let wc = constants.WEAPON[this.selected.name];
-		var from = (direction > 0) ? wc.pos.default : wc.pos.aiming;
-		var to = (direction > 0) ? wc.pos.aiming : wc.pos.default;
+		let config = this.selected.config;
+		var from = (direction > 0) ? config.pos.default : config.pos.aiming;
+		var to = (direction > 0) ? config.pos.aiming : config.pos.default;
 		from = Object.assign({}, from);
 		to = Object.assign({}, to);
 
