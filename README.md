@@ -4,17 +4,17 @@ A browser based First Person Shooter game written in `ECMAScript 6`.
 
 ## Test it live
 
-* Client (f88e92a): [jstrike.vim.li](http://jstrike.vim.li/)
-* Server (129a0f6): jstrike-server.herokuapp.com
+* [f88e92a] Client: [jstrike.vim.li](http://jstrike.vim.li/)
+* [129a0f6] Server: jstrike-server.herokuapp.com
 
-Connect to the server:
+*Connect to the server:*
 ```shell
 $ connect jstrike-server.herokuapp.com
 connecting to jstrike-server.herokuapp.com
 connection successful!
 ```
 
-Join game '0':
+*Join game '0':*
 ```shell
 jstrike-server.herokuapp.com$ join 0
 join: starting game 'AWP India'
