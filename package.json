@@ -1,8 +1,8 @@
 {
   "name": "jstrike",
   "version": "0.0.1",
-  "description": "Node JStrike server.",
-  "main": "server.js",
+  "description": "Node JStrike client.",
+  "main": "index.js",
   "scripts": {
     "postinstall": "webpack --config ./webpack.config.js --progress --bail",
     "start": "node build/main.bundle.js",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Pwntus/JStrike-Server.git"
+    "url": "https://github.com/Pwntus/JStrike.git"
   },
   "author": "Pontus Aurdal",
   "license": "GPL-3.0",
@@ -22,6 +22,9 @@
     "socket.io": "^4.5.0",
     "socket.io-client": "^4.5.0",
     "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "webpack-cli": "^4.10.0",
+    "three": "^0.132.2",
+    "tween.js": "^18.6.4",
+    "http-server": "^14.0.0"
   }
 }
