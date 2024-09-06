@@ -18,7 +18,7 @@ module.exports = {
 		filename: '[name].bundle.js'
 	},
 	externals: nodeModules,
-	target: 'node',
+	target: 'web', // Changed from 'node' to 'web'
 	module: {
 		rules: [
 			{
@@ -31,6 +31,15 @@ module.exports = {
 				}
 			}
 		]
+	},
+	resolve: {
+		fallback: {
+			"path": require.resolve("path-browserify"),
+			"fs": false,
+			"crypto": require.resolve("crypto-browserify"),
+			"stream": require.resolve("stream-browserify"),
+			"buffer": require.resolve("buffer/")
+		}
 	},
 	stats: {
 		colors: true
