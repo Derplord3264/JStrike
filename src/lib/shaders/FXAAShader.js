@@ -7,7 +7,7 @@
  * - WebGL port by @supereggbert
  * http://www.glge.org/demos/fxaa/
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.FXAAShader = {
 
