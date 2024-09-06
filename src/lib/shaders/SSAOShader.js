@@ -10,7 +10,7 @@
  * - modified to use RGBA packed depth texture (use clear color 1,1,1,1 for depth pass)
  * - refactoring and optimizations
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.SSAOShader = {
 
