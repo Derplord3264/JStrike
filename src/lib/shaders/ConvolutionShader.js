@@ -5,7 +5,7 @@
  * ported from o3d sample to WebGL / GLSL
  * http://o3d.googlecode.com/svn/trunk/samples/convolution.html
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.ConvolutionShader = {
 
