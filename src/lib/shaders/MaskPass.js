@@ -1,7 +1,7 @@
 /**
  * @author alteredq / http://alteredqualia.com/
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.MaskPass = function ( scene, camera ) {
 
