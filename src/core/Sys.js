@@ -7,7 +7,7 @@ class System {
 		/* Init process stack */
 		this.stack = new ProcessStack();
 
-		/* Add input even listeners */
+		/* Add input event listeners */
 		window.addEventListener('keypress', 	(e) => this.inputHandler(e));
 		window.addEventListener('keydown', 		(e) => this.inputHandler(e));
 		window.addEventListener('keyup', 		(e) => this.inputHandler(e));
@@ -23,7 +23,7 @@ class System {
 		e.stopPropagation();
 
 		let current = this.stack.getTopItem();
-		if (current !== 'undefined') {
+		if (current !== undefined) {
 			current.input(e);
 		}
 	}
