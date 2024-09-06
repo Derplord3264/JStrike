@@ -3,7 +3,7 @@
  *
  * @author angelxuanchang
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.MTLLoader = function( manager ) {
 
