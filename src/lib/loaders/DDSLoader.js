@@ -1,7 +1,7 @@
 /*
  * @author mrdoob / http://mrdoob.com/
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.DDSLoader = function () {
 
