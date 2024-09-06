@@ -7,7 +7,7 @@
 
 module.exports = function ( camera ) {
 
-  var THREE = window.THREE || require('three');
+  import * as THREE from 'three';
 
   var scope = this;
 
