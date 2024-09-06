@@ -3,7 +3,7 @@
  *
  * Full-screen textured quad shader
  */
-var THREE = window.THREE || require('three');
+import * as THREE from 'three';
 
 THREE.CopyShader = {
 
